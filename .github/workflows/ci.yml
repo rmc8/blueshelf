@@ -1,0 +1,42 @@
+name: CI (Lint, Typecheck, Test, Build)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Code Quality & Test Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack & Setup pnpm
+        run: corepack enable
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check Formatting & Lint
+        run: pnpm run lint
+
+      - name: TypeScript & Svelte Check
+        run: pnpm run check
+
+      - name: Run Unit Tests (TDD)
+        run: pnpm run test
+
+      - name: Production Build & PWA Check
+        run: pnpm run build

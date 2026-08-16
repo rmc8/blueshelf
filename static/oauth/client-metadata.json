@@ -1,0 +1,14 @@
+{
+	"client_id": "https://bs.rmc-8.com/oauth/client-metadata.json",
+	"client_name": "Blueshelf",
+	"client_uri": "https://bs.rmc-8.com",
+	"logo_uri": "https://bs.rmc-8.com/img/logo/shelfsky.svg",
+	"tos_uri": "https://bs.rmc-8.com",
+	"policy_uri": "https://bs.rmc-8.com",
+	"redirect_uris": ["https://bs.rmc-8.com/oauth/callback"],
+	"grant_types": ["authorization_code", "refresh_token"],
+	"response_types": ["code"],
+	"scope": "atproto",
+	"token_endpoint_auth_method": "none",
+	"dpop_bound_access_tokens": true
+}
