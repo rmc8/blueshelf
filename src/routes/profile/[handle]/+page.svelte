@@ -52,19 +52,19 @@
 	let bookForRecordModal = $state<BookRef | null>(null);
 	let isRecordModalOpen = $state(false);
 
-	const tabs: Array<{ id: ShelfStatusFilter; label: string }> = [
-		{ id: 'all', label: m.all() },
-		{ id: 'reading', label: m.status_reading() },
-		{ id: 'finished', label: m.status_finished() },
-		{ id: 'backlog', label: m.status_backlog() },
-		{ id: 'want', label: m.status_want() },
-		{ id: 'dropped', label: m.status_dropped() }
+	const tabs: Array<{ id: ShelfStatusFilter; label: () => string }> = [
+		{ id: 'all', label: () => m.all() },
+		{ id: 'reading', label: () => m.status_reading() },
+		{ id: 'finished', label: () => m.status_finished() },
+		{ id: 'backlog', label: () => m.status_backlog() },
+		{ id: 'want', label: () => m.status_want() },
+		{ id: 'dropped', label: () => m.status_dropped() }
 	];
 
-	const sortOptions: Array<{ id: ShelfSortBy; label: string }> = [
-		{ id: 'recent', label: m.sort_recent() },
-		{ id: 'title', label: m.sort_title() },
-		{ id: 'rating', label: '評価順' }
+	const sortOptions: Array<{ id: ShelfSortBy; label: () => string }> = [
+		{ id: 'recent', label: () => m.sort_recent() },
+		{ id: 'title', label: () => m.sort_title() },
+		{ id: 'rating', label: () => m.sort_rating() }
 	];
 
 	const filteredItems = $derived(filterAndSortShelfItems(rawItems, activeTab, sortBy));
@@ -137,12 +137,12 @@
 		try {
 			await navigator.clipboard.writeText(window.location.href);
 			isCopied = true;
-			toast.success('本棚のURLをコピーしました！');
+			toast.success(m.copied());
 			setTimeout(() => {
 				isCopied = false;
 			}, 2000);
 		} catch {
-			toast.error('URLのコピーに失敗しました');
+			toast.error('URL copy failed');
 		}
 	}
 
@@ -154,22 +154,20 @@
 
 <svelte:head>
 	<title>
-		{profile ? `${profile.displayName || profile.handle} の本棚` : 'ユーザーが見つかりません'} | {m.app_name()}
+		{profile ? `${profile.displayName || profile.handle} - ${m.my_shelf()}` : m.user_not_found()} | {m.app_name()}
 	</title>
 	{#if profile}
 		<meta
 			name="description"
-			content="{profile.displayName ||
-				profile.handle} さんの Bluesky 読書記録・マイ本棚（{rawItems.length} 冊）"
+			content="{profile.displayName || profile.handle} ({rawItems.length} {m.pages()})"
 		/>
 		<meta
 			property="og:title"
-			content="{profile.displayName || profile.handle} の本棚 | Blueshelf"
+			content="{profile.displayName || profile.handle} - {m.my_shelf()} | Blueshelf"
 		/>
 		<meta
 			property="og:description"
-			content="{profile.displayName ||
-				profile.handle} さんの Bluesky 読書記録・マイ本棚（{rawItems.length} 冊）"
+			content="{profile.displayName || profile.handle} ({rawItems.length} {m.pages()})"
 		/>
 		{#if profile.avatar}
 			<meta property="og:image" content={profile.avatar} />
@@ -183,7 +181,7 @@
 		<div class="flex h-64 flex-col items-center justify-center space-y-3">
 			<span class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
 			></span>
-			<p class="text-xs text-muted-foreground">本棚を読み込んでいます...</p>
+			<p class="text-xs text-muted-foreground">Loading...</p>
 		</div>
 	{:else if !profile}
 		<!-- Not Found (404) State -->
@@ -194,21 +192,19 @@
 				<UserX class="h-8 w-8 text-destructive opacity-60" />
 			</div>
 			<div class="max-w-md space-y-1.5">
-				<h1 class="text-xl font-bold text-foreground">ユーザーが見つかりませんでした</h1>
+				<h1 class="text-xl font-bold text-foreground">{m.user_not_found()}</h1>
 				<p class="text-xs leading-relaxed text-muted-foreground">
-					指定された Bluesky アカウント（<span class="font-mono text-foreground"
-						>@{handleParam}</span
-					>）は存在しないか、プロフィールの取得に失敗しました。
+					{m.user_not_found_desc()} (<span class="font-mono text-foreground">@{handleParam}</span>)
 				</p>
 			</div>
 			<div class="flex flex-wrap items-center justify-center gap-2 pt-2">
 				<Button href="/" variant="outline" size="sm" class="gap-1.5 rounded-xl text-xs">
 					<ArrowLeft class="h-3.5 w-3.5" />
-					<span>トップへ戻る</span>
+					<span>{m.back_to_home()}</span>
 				</Button>
 				<Button href="/search" size="sm" class="gap-1.5 rounded-xl text-xs shadow-xs">
 					<Search class="h-3.5 w-3.5" />
-					<span>本を探す</span>
+					<span>{m.search_books_cta()}</span>
 				</Button>
 			</div>
 		</div>
@@ -269,10 +265,10 @@
 					>
 						{#if isCopied}
 							<Check class="h-3.5 w-3.5 text-emerald-500" />
-							<span>コピー済み</span>
+							<span>{m.copied()}</span>
 						{:else}
 							<Copy class="h-3.5 w-3.5" />
-							<span>リンク</span>
+							<span>{m.copy_link()}</span>
 						{/if}
 					</Button>
 
@@ -282,7 +278,7 @@
 						class="gap-1.5 rounded-xl text-xs font-semibold shadow-xs"
 					>
 						<Share2 class="h-3.5 w-3.5" />
-						<span>Blueskyでシェア</span>
+						<span>{m.share_on_bluesky()}</span>
 					</Button>
 				</div>
 			</div>
@@ -302,7 +298,7 @@
 							? 'border-primary bg-primary text-primary-foreground shadow-xs'
 							: 'border-border/60 bg-card/50 text-muted-foreground hover:bg-muted hover:text-foreground'}"
 					>
-						<span>{tab.label}</span>
+						<span>{tab.label()}</span>
 						<span
 							class="py-0.2 rounded-full px-1.5 text-[10px] {isSelected
 								? 'bg-primary-foreground/20 text-primary-foreground'
@@ -327,7 +323,7 @@
 						aria-label="Sort options"
 					>
 						{#each sortOptions as opt (opt.id)}
-							<option value={opt.id} class="bg-background text-foreground">{opt.label}</option>
+							<option value={opt.id} class="bg-background text-foreground">{opt.label()}</option>
 						{/each}
 					</select>
 				</div>
@@ -386,8 +382,8 @@
 					</div>
 					<h2 class="text-base font-bold text-foreground">
 						{activeTab === 'all'
-							? '本棚にまだ本が登録されていません'
-							: `「${tabs.find((t) => t.id === activeTab)?.label}」の本はありません`}
+							? m.empty_shelf()
+							: `「${tabs.find((t) => t.id === activeTab)?.label()}」`}
 					</h2>
 				</div>
 			{/if}
@@ -408,5 +404,5 @@
 	book={bookForRecordModal}
 	isOpen={isRecordModalOpen}
 	onClose={() => (isRecordModalOpen = false)}
-	onSaved={() => toast.success('マイ本棚に追加しました！')}
+	onSaved={() => toast.success(m.save())}
 />

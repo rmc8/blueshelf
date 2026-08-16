@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { X, LogIn, AlertCircle, ShieldCheck } from '@lucide/svelte';
+	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
 		isOpen: boolean;
@@ -86,10 +87,10 @@
 					<LogIn class="h-6 w-6" />
 				</div>
 				<h2 id="login-modal-title" class="text-xl font-bold tracking-tight text-foreground">
-					Bluesky でログイン
+					{m.login_dialog_title()}
 				</h2>
 				<p class="text-xs leading-relaxed text-muted-foreground">
-					パスワードの入力は不要です。ATProto 公式 OAuth により、安全に PDS と連携します。
+					{m.login_dialog_desc()}
 				</p>
 			</div>
 
@@ -97,7 +98,7 @@
 			<form onsubmit={handleSubmit} class="space-y-4 pt-1">
 				<div class="space-y-1.5">
 					<label for="bsky-handle" class="block text-xs font-semibold text-foreground">
-						Bluesky ハンドル名
+						{m.login_handle_label()}
 					</label>
 					<div class="relative">
 						<Input
@@ -111,7 +112,7 @@
 						/>
 					</div>
 					<p class="text-[10px] text-muted-foreground">
-						※ カスタムドメイン（例: alice.com）も利用可能です
+						{m.login_handle_hint()}
 					</p>
 				</div>
 
@@ -130,7 +131,7 @@
 				>
 					<ShieldCheck class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 					<span>
-						Blueshelf はあなたのパスワードや秘密情報を保持しません（Zero-Secret PKCE+DPoP 設計）。
+						{m.login_zero_secret_notice()}
 					</span>
 				</div>
 
@@ -138,16 +139,15 @@
 					<Button
 						type="submit"
 						disabled={isSubmitting}
-						class="h-10 w-full gap-2 rounded-xl font-semibold shadow-sm"
+						class="h-10 w-full rounded-xl text-sm font-semibold shadow-sm"
 					>
 						{#if isSubmitting}
 							<span
-								class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"
+								class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
 							></span>
-							<span>Bluesky に接続中...</span>
+							<span>{m.login()}...</span>
 						{:else}
-							<LogIn class="h-4 w-4" />
-							<span>次へ進む</span>
+							<span>{m.login()}</span>
 						{/if}
 					</Button>
 				</div>

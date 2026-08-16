@@ -139,9 +139,10 @@
 			{#if status === 'reading' && item.statusRecord.currentPage}
 				<div class="space-y-1.5 rounded-xl border border-border/60 bg-muted/30 p-3.5 text-xs">
 					<div class="flex justify-between font-medium">
-						<span class="text-muted-foreground">読書進捗</span>
+						<span class="text-muted-foreground">{m.reading_progress()}</span>
 						<span class="font-bold text-primary">
-							{item.statusRecord.currentPage} / {book.pageCount || '?'} ページ
+							{item.statusRecord.currentPage} / {book.pageCount || '?'}
+							{m.pages()}
 						</span>
 					</div>
 					{#if book.pageCount}
@@ -162,7 +163,7 @@
 			{#if review?.rating || review?.content}
 				<div class="space-y-2.5 rounded-xl border border-border/60 bg-card/60 p-4 shadow-xs">
 					<div class="flex items-center justify-between">
-						<span class="text-xs font-bold text-foreground">評価・感想</span>
+						<span class="text-xs font-bold text-foreground">{m.rating_and_review()}</span>
 						{#if review?.rating}
 							<StarRating rating={review.rating} readonly maxRating={5} />
 						{/if}
@@ -177,7 +178,7 @@
 									class="flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400"
 								>
 									<AlertTriangle class="h-4 w-4" />
-									<span>この感想にはネタバレが含まれています</span>
+									<span>{m.contains_spoiler_warning()}</span>
 								</div>
 								<Button
 									size="sm"
@@ -185,7 +186,7 @@
 									class="h-7 text-xs"
 									onclick={() => (revealSpoiler = true)}
 								>
-									感想を表示する
+									{m.show_spoiler()}
 								</Button>
 							</div>
 						{:else}
@@ -207,7 +208,7 @@
 						class="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
 					>
 						<ExternalLink class="h-3.5 w-3.5" />
-						<span>Open Library で見る</span>
+						<span>{m.open_in_openlibrary()}</span>
 					</a>
 				{:else}
 					<div></div>
@@ -224,7 +225,7 @@
 							}}
 						>
 							<Plus class="h-4 w-4" />
-							<span>マイ本棚に追加</span>
+							<span>{m.add_to_my_shelf()}</span>
 						</Button>
 					{/if}
 				</div>

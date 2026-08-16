@@ -122,7 +122,7 @@
 									class="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-muted"
 								>
 									<UserIcon class="h-3.5 w-3.5 text-muted-foreground" />
-									<span>公開本棚を見る</span>
+									<span>{m.view_public_shelf()}</span>
 								</a>
 
 								<button
