@@ -6,18 +6,19 @@
 	}
 
 	let { count = 8 }: Props = $props();
+	const skeletonItems = $derived(Array.from({ length: count }, (_, idx) => idx));
 </script>
 
 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-	{#each Array(count) as _}
-		<Card class="overflow-hidden rounded-xl border border-border/40 bg-card/40 animate-pulse">
-			<div class="aspect-[2/3] w-full bg-muted/60"></div>
-			<div class="p-3 space-y-2">
-				<div class="h-4 w-3/4 rounded bg-muted/80"></div>
-				<div class="h-3 w-1/2 rounded bg-muted/60"></div>
-				<div class="flex justify-between pt-2 border-t border-border/30">
-					<div class="h-2.5 w-1/3 rounded bg-muted/40"></div>
-					<div class="h-2.5 w-8 rounded bg-muted/40"></div>
+	{#each skeletonItems as idx (idx)}
+		<Card class="border-border/40 bg-card/40 animate-pulse overflow-hidden rounded-xl border">
+			<div class="bg-muted/60 aspect-2/3 w-full"></div>
+			<div class="space-y-2 p-3">
+				<div class="bg-muted/80 h-4 w-3/4 rounded"></div>
+				<div class="bg-muted/60 h-3 w-1/2 rounded"></div>
+				<div class="border-border/30 flex justify-between border-t pt-2">
+					<div class="bg-muted/40 h-2.5 w-1/3 rounded"></div>
+					<div class="bg-muted/40 h-2.5 w-8 rounded"></div>
 				</div>
 			</div>
 		</Card>

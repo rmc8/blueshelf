@@ -16,7 +16,7 @@
 	variant="ghost"
 	size="icon"
 	onclick={toggleLanguage}
-	class="h-9 w-9 text-muted-foreground hover:text-foreground"
+	class="text-muted-foreground hover:text-foreground h-9 w-9"
 	title={currentLocale === 'ja' ? 'Switch to English' : '日本語に切り替え'}
 	aria-label="Toggle language"
 >

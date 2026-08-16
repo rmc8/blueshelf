@@ -11,11 +11,6 @@
 	}: TabsPrimitive.RootProps = $props();
 </script>
 
-<TabsPrimitive.Root
-	bind:ref
-	bind:value
-	class={cn('flex flex-col gap-2', className)}
-	{...restProps}
->
+<TabsPrimitive.Root bind:ref bind:value class={cn('flex flex-col gap-2', className)} {...restProps}>
 	{@render children?.()}
 </TabsPrimitive.Root>

@@ -2,15 +2,11 @@
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn } from '$lib/utils';
 
-	let {
-		class: className = '',
-		children,
-		...restProps
-	}: HTMLAttributes<HTMLDivElement> = $props();
+	let { class: className = '', children, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 </script>
 
 <div
-	class={cn('rounded-xl border bg-card text-card-foreground shadow-sm transition-all', className)}
+	class={cn('bg-card text-card-foreground rounded-xl border shadow-sm transition-all', className)}
 	{...restProps}
 >
 	{@render children?.()}

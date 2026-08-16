@@ -19,7 +19,9 @@
 <ModeWatcher />
 <Toaster position="bottom-right" richColors />
 
-<div class="relative flex min-h-screen flex-col bg-background text-foreground selection:bg-primary/20 selection:text-primary pb-20 md:pb-0">
+<div
+	class="bg-background text-foreground selection:bg-primary/20 selection:text-primary relative flex min-h-screen flex-col pb-20 md:pb-0"
+>
 	<Header />
 	<main class="flex-1">
 		{@render children()}

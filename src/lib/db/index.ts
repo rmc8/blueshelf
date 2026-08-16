@@ -1,5 +1,5 @@
 import { Dexie, type Table } from 'dexie';
-import type { BookRef, ReadingStatusRecord, ReviewRecord } from '$lib/types/book';
+import type { ReadingStatusRecord, ReviewRecord } from '$lib/types/book';
 
 export interface CachedBook {
 	id: string; // isbn13 または googleBooksId
@@ -19,7 +19,7 @@ export interface OfflineMutation {
 	type: 'create_status' | 'update_status' | 'delete_status' | 'create_review';
 	collection: string;
 	rkey?: string;
-	record: any;
+	record: unknown;
 	createdAt: number;
 	synced: boolean;
 }

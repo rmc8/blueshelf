@@ -20,7 +20,7 @@ export async function searchBooks(query: string, maxResults = 20): Promise<BookR
 				if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
 					return [cached];
 				}
-			} catch (_) {
+			} catch {
 				// IndexedDB missing in SSR / Node test
 			}
 		}
@@ -50,7 +50,9 @@ async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
 		isbn13: isbn.length === 13 ? isbn : openbd?.isbn13 || gbook?.isbn13 || ol?.isbn13,
 		isbn10: isbn.length === 10 ? isbn : gbook?.isbn10 || ol?.isbn10,
 		title: openbd?.title || gbook?.title || ol?.title || 'Unknown Title',
-		authors: openbd?.authors?.length ? openbd.authors : gbook?.authors || ol?.authors || ['Unknown Author'],
+		authors: openbd?.authors?.length
+			? openbd.authors
+			: gbook?.authors || ol?.authors || ['Unknown Author'],
 		publisher: openbd?.publisher || gbook?.publisher || ol?.publisher,
 		publishedDate: openbd?.publishedDate || gbook?.publishedDate || ol?.publishedDate,
 		coverUrl: openbd?.coverUrl || gbook?.coverUrl || ol?.coverUrl,
@@ -97,9 +99,12 @@ async function fetchGoogleBooks(q: string, maxResults: number): Promise<BookRef[
 
 		for (const item of data.items) {
 			const info = item.volumeInfo || {};
-			const industryIdentifiers = info.industryIdentifiers || [];
-			const isbn13Obj = industryIdentifiers.find((id: any) => id.type === 'ISBN_13');
-			const isbn10Obj = industryIdentifiers.find((id: any) => id.type === 'ISBN_10');
+			const industryIdentifiers = (info.industryIdentifiers || []) as Array<{
+				type?: string;
+				identifier?: string;
+			}>;
+			const isbn13Obj = industryIdentifiers.find((id) => id.type === 'ISBN_13');
+			const isbn10Obj = industryIdentifiers.find((id) => id.type === 'ISBN_10');
 
 			const coverUrl =
 				info.imageLinks?.thumbnail?.replace('http://', 'https://') ||
@@ -211,7 +216,9 @@ async function fetchOpenBdBatches(isbns: string[]): Promise<Map<string, Partial<
 			if (!isbn13) continue;
 
 			map.set(isbn13, {
-				coverUrl: summary.cover || onix.CollateralDetail?.SupportingResource?.[0]?.ResourceVersion?.[0]?.ResourceLink,
+				coverUrl:
+					summary.cover ||
+					onix.CollateralDetail?.SupportingResource?.[0]?.ResourceVersion?.[0]?.ResourceLink,
 				description: item.onix?.CollateralDetail?.TextContent?.[0]?.Text,
 				publisher: summary.publisher
 			});
@@ -244,7 +251,9 @@ async function fetchOpenBd(isbn: string): Promise<BookRef | null> {
 			authors: summary.author ? [summary.author] : [],
 			publisher: summary.publisher,
 			publishedDate: summary.pubdate,
-			coverUrl: summary.cover || onix.CollateralDetail?.SupportingResource?.[0]?.ResourceVersion?.[0]?.ResourceLink,
+			coverUrl:
+				summary.cover ||
+				onix.CollateralDetail?.SupportingResource?.[0]?.ResourceVersion?.[0]?.ResourceLink,
 			description: item.onix?.CollateralDetail?.TextContent?.[0]?.Text
 		};
 	} catch {
@@ -261,7 +270,7 @@ async function saveToCache(id: string, book: BookRef) {
 			cachedAt: Date.now()
 		};
 		await db.books.put(cached);
-	} catch (_) {
+	} catch {
 		// Ignore cache failure
 	}
 }
