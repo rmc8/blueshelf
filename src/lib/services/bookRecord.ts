@@ -5,6 +5,13 @@ import type {
 	ReviewRecord,
 	ReadingStatusType
 } from '$lib/types/book';
+import { getAgent, getSession } from '$lib/services/atproto/oauth';
+import {
+	putReadingStatusToPds,
+	putReviewToPds,
+	deleteRecordFromPds,
+	LEXICON_COLLECTIONS
+} from '$lib/services/atproto/pdsSync';
 
 export interface SaveRecordParams {
 	book: BookRef;
@@ -25,7 +32,7 @@ export type ShelfSortBy = 'recent' | 'title' | 'rating';
 export type ShelfStatusFilter = 'all' | ReadingStatusType;
 
 /**
- * 読書記録 & レビューを IndexedDB (Dexie) に即時保存
+ * 読書記録 & レビューを IndexedDB (Dexie) および PDS に保存
  */
 export async function saveReadingRecord(params: SaveRecordParams): Promise<{
 	statusRecord: ReadingStatusRecord;
@@ -72,6 +79,31 @@ export async function saveReadingRecord(params: SaveRecordParams): Promise<{
 			} catch {
 				// Ignore in SSR / Node
 			}
+		}
+	}
+
+	// ログイン中の場合は PDS に非同期同期（バックグラウンド）
+	const agent = getAgent();
+	const session = getSession();
+	if (agent && session?.did) {
+		putReadingStatusToPds(agent, session.did, {
+			book: params.book,
+			status: params.status,
+			currentPage: params.currentPage
+		}).catch((err) => {
+			console.warn('PDS readingStatus sync failed:', err);
+		});
+
+		if (reviewRecord) {
+			putReviewToPds(agent, session.did, {
+				book: params.book,
+				rating: params.rating,
+				content: params.reviewContent?.trim(),
+				hasSpoiler: params.hasSpoiler,
+				statusUri
+			}).catch((err) => {
+				console.warn('PDS review sync failed:', err);
+			});
 		}
 	}
 
@@ -134,17 +166,31 @@ export async function getAllReadingRecords(): Promise<ShelfItem[]> {
 /**
  * 本棚から書籍記録を削除
  */
-export async function deleteReadingRecord(bookKey: string): Promise<boolean> {
-	if (typeof indexedDB === 'undefined') return false;
-
-	try {
-		const statusUri = `local:status:${bookKey}`;
-		const reviewUri = `local:review:${bookKey}`;
-		await Promise.all([db.readingStatuses.delete(statusUri), db.reviews.delete(reviewUri)]);
-		return true;
-	} catch {
-		return false;
+export async function deleteReadingRecord(book: BookRef): Promise<boolean> {
+	const bookKey = book.isbn13 || book.title;
+	if (typeof indexedDB !== 'undefined') {
+		try {
+			const statusUri = `local:status:${bookKey}`;
+			const reviewUri = `local:review:${bookKey}`;
+			await Promise.all([db.readingStatuses.delete(statusUri), db.reviews.delete(reviewUri)]);
+		} catch {
+			// Ignore
+		}
 	}
+
+	// ログイン中の場合は PDS からも削除
+	const agent = getAgent();
+	const session = getSession();
+	if (agent && session?.did) {
+		Promise.all([
+			deleteRecordFromPds(agent, session.did, LEXICON_COLLECTIONS.READING_STATUS, book),
+			deleteRecordFromPds(agent, session.did, LEXICON_COLLECTIONS.REVIEW, book)
+		]).catch((err) => {
+			console.warn('PDS record deletion failed:', err);
+		});
+	}
+
+	return true;
 }
 
 /**

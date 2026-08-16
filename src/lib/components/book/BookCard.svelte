@@ -57,7 +57,7 @@
 		{#if status}
 			<Badge
 				variant={status}
-				class="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-semibold backdrop-blur-md shadow-xs rounded-md"
+				class="absolute top-2 left-2 rounded-md px-2 py-0.5 text-[10px] font-semibold shadow-xs backdrop-blur-md"
 			>
 				{getStatusLabel(status)}
 			</Badge>
