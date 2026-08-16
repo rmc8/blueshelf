@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
-	import { BookOpen, Search, LogIn } from '@lucide/svelte';
+	import { Search, LogIn } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import LanguageToggle from './LanguageToggle.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
@@ -11,9 +11,7 @@
 		<!-- Brand Logo & Title -->
 		<div class="flex items-center gap-6">
 			<a href="/" class="flex items-center gap-2.5 transition-opacity hover:opacity-90">
-				<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-					<BookOpen class="h-4 w-4" />
-				</div>
+				<img src="/img/logo/shelfsky.svg" alt="Blueshelf Logo" class="h-8 w-8 rounded-lg object-contain shadow-sm" />
 				<span class="font-bold tracking-tight text-base sm:text-lg bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
 					{m.app_name()}
 				</span>

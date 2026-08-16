@@ -8,13 +8,12 @@
 	import Header from '$lib/components/layout/Header.svelte';
 	import BottomNav from '$lib/components/layout/BottomNav.svelte';
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<link rel="icon" type="image/svg+xml" href="/img/logo/shelfsky.svg" />
 </svelte:head>
 
 <ModeWatcher />
