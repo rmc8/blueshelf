@@ -87,9 +87,9 @@
 			{#if status === 'reading' && item.statusRecord.currentPage}
 				<div class="max-w-xs pt-1">
 					<div class="flex justify-between pb-0.5 text-[10px] text-muted-foreground">
-						<span>進捗</span>
+						<span>{m.reading_progress()}</span>
 						<span class="font-medium"
-							>{item.statusRecord.currentPage} / {book.pageCount || '?'} p</span
+							>{item.statusRecord.currentPage} / {book.pageCount || '?'} {m.pages()}</span
 						>
 					</div>
 					{#if book.pageCount}

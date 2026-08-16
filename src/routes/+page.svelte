@@ -2,7 +2,7 @@
 	import * as m from '$lib/paraglide/messages';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Search, Library, Sparkles, ShieldCheck, Globe2, BookOpen } from '@lucide/svelte';
+	import { Search, Library, Sparkles, ShieldCheck, Share2, Database } from '@lucide/svelte';
 </script>
 
 <svelte:head>
@@ -20,18 +20,17 @@
 		</div>
 
 		<h1 class="max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
-			AT Protocol 上に、<br class="hidden sm:inline" />
+			{m.tagline_lead()}<br class="hidden sm:inline" />
 			<span
 				class="bg-linear-to-r from-sky-500 via-blue-600 to-indigo-600 bg-clip-text text-transparent"
 			>
-				あなただけの本棚
+				{m.tagline_highlight()}
 			</span>
-			を。
+			{m.tagline_end()}
 		</h1>
 
 		<p class="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-			読書ログ・書評・積読データを自分の PDS に永続保存。<br class="hidden sm:inline" />
-			広告レスで美しい、新世代の分散型ソーシャル本棚アプリケーション。
+			{m.hero_desc()}
 		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -59,12 +58,10 @@
 				<div
 					class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400"
 				>
-					<ShieldCheck class="h-5 w-5" />
+					<Database class="h-5 w-5" />
 				</div>
-				<CardTitle level={2} class="text-base font-semibold">自己主権データ (PDS)</CardTitle>
-				<CardDescription
-					>サービス終了リスクなし。読書記録はすべてあなたの PDS に保存。</CardDescription
-				>
+				<CardTitle level={2} class="text-base font-semibold">{m.feature_pds_title()}</CardTitle>
+				<CardDescription>{m.feature_pds_desc()}</CardDescription>
 			</CardHeader>
 		</Card>
 
@@ -75,11 +72,10 @@
 				<div
 					class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
 				>
-					<Globe2 class="h-5 w-5" />
+					<Share2 class="h-5 w-5" />
 				</div>
-				<CardTitle level={2} class="text-base font-semibold">和書・洋書ハイブリッド</CardTitle>
-				<CardDescription>Google Books & openBD で全世界の書籍を高速・高精度に検索。</CardDescription
-				>
+				<CardTitle level={2} class="text-base font-semibold">{m.feature_social_title()}</CardTitle>
+				<CardDescription>{m.feature_social_desc()}</CardDescription>
 			</CardHeader>
 		</Card>
 
@@ -90,12 +86,12 @@
 				<div
 					class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
 				>
-					<BookOpen class="h-5 w-5" />
+					<ShieldCheck class="h-5 w-5" />
 				</div>
-				<CardTitle level={2} class="text-base font-semibold">オフライン PWA 対応</CardTitle>
-				<CardDescription
-					>地下鉄や飛行機でも本棚を閲覧・記録。オンライン復帰時に自動同期。</CardDescription
+				<CardTitle level={2} class="text-base font-semibold"
+					>{m.feature_zero_secret_title()}</CardTitle
 				>
+				<CardDescription>{m.feature_zero_secret_desc()}</CardDescription>
 			</CardHeader>
 		</Card>
 	</section>

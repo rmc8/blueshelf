@@ -22,7 +22,7 @@
 
 		const cleanHandle = handleInput.trim().replace(/^@/, '');
 		if (!cleanHandle) {
-			errorText = 'Bluesky のハンドル名を入力してください（例: handle.bsky.social）';
+			errorText = m.login_error_empty_handle();
 			return;
 		}
 
@@ -30,7 +30,7 @@
 		try {
 			await authState.login(cleanHandle);
 		} catch (err) {
-			errorText = err instanceof Error ? err.message : 'ログインの開始に失敗しました。';
+			errorText = err instanceof Error ? err.message : m.login_error_generic();
 			isSubmitting = false;
 		}
 	}

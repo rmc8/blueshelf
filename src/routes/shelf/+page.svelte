@@ -14,7 +14,7 @@
 	import BookGrid from '$lib/components/book/BookGrid.svelte';
 	import ShelfListItem from '$lib/components/shelf/ShelfListItem.svelte';
 	import BookRecordModal from '$lib/components/book/BookRecordModal.svelte';
-	import { Library, LayoutGrid, List, ArrowUpDown, Search, Plus, BookMarked } from '@lucide/svelte';
+	import { Library, LayoutGrid, List, ArrowUpDown, Plus, Search, BookMarked } from '@lucide/svelte';
 
 	let rawItems = $state<ShelfItem[]>([]);
 	let activeTab = $state<ShelfStatusFilter>('all');
@@ -25,19 +25,19 @@
 	let selectedBookForModal = $state<BookRef | null>(null);
 	let isModalOpen = $state(false);
 
-	const tabs: Array<{ id: ShelfStatusFilter; label: string; icon?: typeof Library }> = [
-		{ id: 'all', label: m.all() },
-		{ id: 'reading', label: m.status_reading() },
-		{ id: 'finished', label: m.status_finished() },
-		{ id: 'backlog', label: m.status_backlog() },
-		{ id: 'want', label: m.status_want() },
-		{ id: 'dropped', label: m.status_dropped() }
+	const tabs: Array<{ id: ShelfStatusFilter; label: () => string }> = [
+		{ id: 'all', label: () => m.all() },
+		{ id: 'reading', label: () => m.status_reading() },
+		{ id: 'finished', label: () => m.status_finished() },
+		{ id: 'backlog', label: () => m.status_backlog() },
+		{ id: 'want', label: () => m.status_want() },
+		{ id: 'dropped', label: () => m.status_dropped() }
 	];
 
-	const sortOptions: Array<{ id: ShelfSortBy; label: string }> = [
-		{ id: 'recent', label: m.sort_recent() },
-		{ id: 'title', label: m.sort_title() },
-		{ id: 'rating', label: '評価順' }
+	const sortOptions: Array<{ id: ShelfSortBy; label: () => string }> = [
+		{ id: 'recent', label: () => m.sort_recent() },
+		{ id: 'title', label: () => m.sort_title() },
+		{ id: 'rating', label: () => m.sort_rating() }
 	];
 
 	const filteredItems = $derived(filterAndSortShelfItems(rawItems, activeTab, sortBy));
@@ -107,7 +107,7 @@
 				<span>{m.my_shelf()}</span>
 			</h1>
 			<p class="pt-1 text-xs text-muted-foreground sm:text-sm">
-				登録した本（{rawItems.length} 冊）のステータス管理・書評・読書進捗を一覧表示します。
+				{m.shelf_subtitle({ count: rawItems.length })}
 			</p>
 		</div>
 
@@ -115,7 +115,7 @@
 			<a href="/search">
 				<Button size="sm" class="gap-1.5 rounded-xl shadow-sm">
 					<Plus class="h-4 w-4" />
-					<span>本を追加する</span>
+					<span>{m.add_book_btn()}</span>
 				</Button>
 			</a>
 		</div>
@@ -135,7 +135,7 @@
 						? 'border-primary bg-primary text-primary-foreground shadow-xs'
 						: 'border-border/60 bg-card/50 text-muted-foreground hover:bg-muted hover:text-foreground'}"
 				>
-					<span>{tab.label}</span>
+					<span>{tab.label()}</span>
 					<span
 						class="py-0.2 rounded-full px-1.5 text-[10px] {isSelected
 							? 'bg-primary-foreground/20 text-primary-foreground'
@@ -160,7 +160,7 @@
 					aria-label="Sort options"
 				>
 					{#each sortOptions as opt (opt.id)}
-						<option value={opt.id} class="bg-background text-foreground">{opt.label}</option>
+						<option value={opt.id} class="bg-background text-foreground">{opt.label()}</option>
 					{/each}
 				</select>
 			</div>
@@ -225,17 +225,17 @@
 				<div class="space-y-1">
 					<h2 class="text-base font-bold text-foreground">
 						{activeTab === 'all'
-							? '本棚にまだ本がありません'
-							: `「${tabs.find((t) => t.id === activeTab)?.label}」の本はありません`}
+							? m.empty_shelf()
+							: `「${tabs.find((t) => t.id === activeTab)?.label()}」`}
 					</h2>
 					<p class="max-w-sm text-xs text-muted-foreground">
-						読みたい本や読んだ本を検索して、マイ本棚に追加してみましょう。
+						{m.empty_shelf_hint()}
 					</p>
 				</div>
 				<a href="/search" class="pt-2">
 					<Button size="sm" class="gap-2 rounded-xl">
 						<Search class="h-4 w-4" />
-						<span>本を検索する</span>
+						<span>{m.search()}</span>
 					</Button>
 				</a>
 			</div>

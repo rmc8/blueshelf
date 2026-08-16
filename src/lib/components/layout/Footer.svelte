@@ -21,15 +21,14 @@
 					</span>
 				</div>
 				<p class="text-[11px] leading-relaxed text-muted-foreground">
-					AT Protocol (Bluesky) 上で動く、分散型・Zero-Secret なオープンソース読書管理・SNS Web/PWA
-					アプリケーション。
+					{m.footer_desc()}
 				</p>
 			</div>
 
 			<!-- Navigation Links -->
 			<div class="flex flex-wrap gap-x-8 gap-y-3 text-xs">
 				<div class="space-y-2">
-					<p class="text-[11px] font-semibold text-foreground">サービス</p>
+					<p class="text-[11px] font-semibold text-foreground">{m.footer_service()}</p>
 					<ul class="space-y-1.5 text-[11px]">
 						<li>
 							<a href="/shelf" class="transition-colors hover:text-foreground">
@@ -45,7 +44,7 @@
 				</div>
 
 				<div class="space-y-2">
-					<p class="text-[11px] font-semibold text-foreground">エコシステム</p>
+					<p class="text-[11px] font-semibold text-foreground">{m.footer_ecosystem()}</p>
 					<ul class="space-y-1.5 text-[11px]">
 						<li>
 							<a
@@ -54,7 +53,7 @@
 								rel="noreferrer"
 								class="flex items-center gap-1 transition-colors hover:text-foreground"
 							>
-								<span>Bluesky 公式</span>
+								<span>{m.footer_bsky_official()}</span>
 								<ExternalLink class="h-2.5 w-2.5" />
 							</a>
 						</li>
@@ -73,7 +72,7 @@
 				</div>
 
 				<div class="space-y-2">
-					<p class="text-[11px] font-semibold text-foreground">作者 & OSS</p>
+					<p class="text-[11px] font-semibold text-foreground">{m.footer_author_oss()}</p>
 					<ul class="space-y-1.5 text-[11px]">
 						<li>
 							<a

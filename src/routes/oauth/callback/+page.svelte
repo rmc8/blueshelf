@@ -18,17 +18,17 @@
 				}, 1000);
 			} else {
 				status = 'error';
-				errorMessage = '認証セッションの解決に失敗しました。もう一度お試しください。';
+				errorMessage = m.auth_failed_title();
 			}
 		} catch (err) {
 			status = 'error';
-			errorMessage = err instanceof Error ? err.message : '認証中にエラーが発生しました。';
+			errorMessage = err instanceof Error ? err.message : m.auth_failed_title();
 		}
 	});
 </script>
 
 <svelte:head>
-	<title>認証中... | {m.app_name()}</title>
+	<title>{m.auth_in_progress_title()} | {m.app_name()}</title>
 </svelte:head>
 
 <div
@@ -42,8 +42,8 @@
 				<Library class="h-7 w-7 animate-pulse" />
 			</div>
 			<div class="space-y-1">
-				<h1 class="text-xl font-bold text-foreground">Blueskyでログイン中...</h1>
-				<p class="text-xs text-muted-foreground">AT Protocol の認証セッションを解決しています。</p>
+				<h1 class="text-xl font-bold text-foreground">{m.auth_in_progress_title()}</h1>
+				<p class="text-xs text-muted-foreground">{m.auth_in_progress_desc()}</p>
 			</div>
 			<div class="flex justify-center pt-2">
 				<span class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"
@@ -58,8 +58,8 @@
 				<CheckCircle class="h-7 w-7" />
 			</div>
 			<div class="space-y-1">
-				<h1 class="text-xl font-bold text-foreground">ログイン完了！</h1>
-				<p class="text-xs text-muted-foreground">マイ本棚へ移動しています...</p>
+				<h1 class="text-xl font-bold text-foreground">{m.auth_success_title()}</h1>
+				<p class="text-xs text-muted-foreground">{m.auth_success_desc()}</p>
 			</div>
 		</div>
 	{:else}
@@ -70,7 +70,7 @@
 				<AlertCircle class="h-7 w-7" />
 			</div>
 			<div class="space-y-1">
-				<h1 class="text-xl font-bold text-foreground">ログインに失敗しました</h1>
+				<h1 class="text-xl font-bold text-foreground">{m.auth_failed_title()}</h1>
 				<p class="text-xs text-muted-foreground">{errorMessage}</p>
 			</div>
 			<div class="pt-2">
@@ -78,7 +78,7 @@
 					href="/"
 					class="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
 				>
-					ホームに戻る
+					{m.back_to_home()}
 				</a>
 			</div>
 		</div>

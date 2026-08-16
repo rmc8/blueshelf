@@ -3,8 +3,18 @@
 	import { saveReadingRecord, getBookRecord } from '$lib/services/bookRecord';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import StarRating from './StarRating.svelte';
-	import { X, Book, Check, Bookmark, BookOpen, CheckCircle, Clock, Ban } from '@lucide/svelte';
+	import StarRating from '$lib/components/book/StarRating.svelte';
+	import {
+		X,
+		Book,
+		Bookmark,
+		BookOpen,
+		CheckCircle,
+		Clock,
+		Ban,
+		Share2,
+		Save
+	} from '@lucide/svelte';
 	import * as m from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 
@@ -12,52 +22,53 @@
 		book: BookRef | null;
 		isOpen: boolean;
 		onClose: () => void;
-		onSaved?: (status: ReadingStatusType) => void;
+		onSaved?: (newStatus: ReadingStatusType) => void;
 	}
 
 	let { book, isOpen, onClose, onSaved }: Props = $props();
 
 	let selectedStatus = $state<ReadingStatusType>('want');
-	let currentPage = $state<number>(0);
-	let totalPages = $state<number>(0);
-	let rating = $state<number>(0);
+	let currentPage = $state(0);
+	let totalPages = $state(0);
+	let rating = $state(0);
 	let reviewContent = $state('');
 	let hasSpoiler = $state(false);
+	let crosspostToBluesky = $state(false);
 	let isSaving = $state(false);
 
 	const statuses: Array<{
 		type: ReadingStatusType;
-		label: string;
+		label: () => string;
 		icon: typeof Bookmark;
 		color: string;
 	}> = [
 		{
 			type: 'want',
-			label: m.status_want(),
+			label: () => m.status_want(),
 			icon: Bookmark,
 			color: 'text-amber-600 bg-amber-500/10 border-amber-500/30'
 		},
 		{
 			type: 'reading',
-			label: m.status_reading(),
+			label: () => m.status_reading(),
 			icon: BookOpen,
 			color: 'text-blue-600 bg-blue-500/10 border-blue-500/30'
 		},
 		{
 			type: 'finished',
-			label: m.status_finished(),
+			label: () => m.status_finished(),
 			icon: CheckCircle,
 			color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/30'
 		},
 		{
 			type: 'backlog',
-			label: m.status_backlog(),
+			label: () => m.status_backlog(),
 			icon: Clock,
 			color: 'text-purple-600 bg-purple-500/10 border-purple-500/30'
 		},
 		{
 			type: 'dropped',
-			label: m.status_dropped(),
+			label: () => m.status_dropped(),
 			icon: Ban,
 			color: 'text-zinc-600 bg-zinc-500/10 border-zinc-500/30'
 		}
@@ -67,31 +78,33 @@
 	$effect(() => {
 		if (isOpen && book) {
 			totalPages = book.pageCount || 0;
-			const key = book.isbn13 || book.title;
-			getBookRecord(key).then(({ statusRecord, reviewRecord }) => {
-				if (statusRecord) {
-					selectedStatus = statusRecord.status;
-					currentPage = statusRecord.currentPage || 0;
-				} else {
-					selectedStatus = 'want';
-					currentPage = 0;
-				}
-				if (reviewRecord) {
-					rating = reviewRecord.rating || 0;
-					reviewContent = reviewRecord.content || '';
-					hasSpoiler = reviewRecord.hasSpoiler || false;
-				} else {
-					rating = 0;
-					reviewContent = '';
-					hasSpoiler = false;
-				}
-			});
+			loadExistingData(book);
 		}
 	});
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && isOpen) {
-			onClose();
+	async function loadExistingData(targetBook: BookRef) {
+		try {
+			const bookKey = targetBook.isbn13 || targetBook.title;
+			if (!bookKey) return;
+			const { statusRecord, reviewRecord } = await getBookRecord(bookKey);
+			if (statusRecord) {
+				selectedStatus = statusRecord.status;
+				currentPage = statusRecord.currentPage || 0;
+			} else {
+				selectedStatus = 'want';
+				currentPage = 0;
+			}
+			if (reviewRecord) {
+				rating = reviewRecord.rating || 0;
+				reviewContent = reviewRecord.content || '';
+				hasSpoiler = reviewRecord.hasSpoiler || false;
+			} else {
+				rating = 0;
+				reviewContent = '';
+				hasSpoiler = false;
+			}
+		} catch (err) {
+			console.warn('Failed to load existing record:', err);
 		}
 	}
 
@@ -103,43 +116,55 @@
 			await saveReadingRecord({
 				book,
 				status: selectedStatus,
-				currentPage: selectedStatus === 'finished' ? totalPages : currentPage,
-				rating,
-				reviewContent,
-				hasSpoiler
+				currentPage: selectedStatus === 'reading' ? currentPage : undefined,
+				rating: rating > 0 ? rating : undefined,
+				reviewContent: reviewContent.trim() || undefined,
+				hasSpoiler: reviewContent.trim() ? hasSpoiler : undefined
 			});
 
-			toast.success(
-				`「${book.title}」を【${statuses.find((s) => s.type === selectedStatus)?.label}】として保存しました！`
-			);
-			onSaved?.(selectedStatus);
+			toast.success(m.save_success());
+
+			if (onSaved) {
+				onSaved(selectedStatus);
+			}
 			onClose();
-		} catch (e) {
-			console.error('Failed to save record:', e);
-			toast.error('保存中にエラーが発生しました');
+		} catch (err) {
+			console.error('Failed to save book record:', err);
+			toast.error(m.save_error());
 		} finally {
 			isSaving = false;
 		}
 	}
+
+	function handleBackdrop(e: MouseEvent) {
+		if (e.target === e.currentTarget && !isSaving) {
+			onClose();
+		}
+	}
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && !isSaving) {
+			onClose();
+		}
+	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeyDown} />
 
 {#if isOpen && book}
-	<!-- Modal Overlay Container -->
-	<div class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
 		<!-- Backdrop -->
 		<button
 			type="button"
 			class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-			onclick={onClose}
+			onclick={handleBackdrop}
 			aria-label="Close modal overlay"
 			tabindex="-1"
 		></button>
 
 		<!-- Modal Content Box -->
 		<div
-			class="relative z-10 max-h-[90vh] w-full max-w-lg space-y-6 overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-2xl sm:rounded-2xl sm:p-6"
+			class="relative z-10 max-h-[90vh] w-full max-w-lg space-y-5 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-book-title"
@@ -148,13 +173,14 @@
 			<button
 				type="button"
 				onclick={onClose}
-				class="absolute top-4 right-4 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				disabled={isSaving}
+				class="absolute top-4 right-4 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
 				aria-label="Close modal"
 			>
 				<X class="h-4 w-4" />
 			</button>
 
-			<!-- Book Header Info -->
+			<!-- Book Header -->
 			<div class="flex items-start gap-4 pr-6">
 				<div
 					class="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted/60 shadow-sm"
@@ -176,16 +202,16 @@
 						{book.title}
 					</h2>
 					{#if book.authors?.length}
-						<p class="line-clamp-1 text-xs text-muted-foreground">
+						<p class="truncate text-xs font-medium text-muted-foreground">
 							{book.authors.join(', ')}
 						</p>
 					{/if}
-					<div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-muted-foreground/80">
+					<div class="flex flex-wrap items-center gap-2 pt-0.5 text-[11px] text-muted-foreground">
 						{#if book.publisher}
 							<span>{book.publisher}</span>
 						{/if}
 						{#if book.publishedDate}
-							<span>• {book.publishedDate.slice(0, 4)}</span>
+							<span>• {book.publishedDate}</span>
 						{/if}
 						{#if book.pageCount}
 							<span>• {book.pageCount} {m.pages()}</span>
@@ -196,7 +222,7 @@
 
 			<!-- Status Selector -->
 			<div class="space-y-2">
-				<span class="text-xs font-semibold text-foreground">ステータス</span>
+				<span class="text-xs font-semibold text-foreground">{m.status_label()}</span>
 				<div class="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
 					{#each statuses as s (s.type)}
 						{@const isSelected = selectedStatus === s.type}
@@ -209,7 +235,7 @@
 								: 'border-border/60 bg-card/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground'}"
 						>
 							<Icon class="h-4 w-4" />
-							<span class="text-[11px]">{s.label}</span>
+							<span class="text-[11px]">{s.label()}</span>
 						</button>
 					{/each}
 				</div>
@@ -219,9 +245,10 @@
 			{#if selectedStatus === 'reading'}
 				<div class="space-y-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3.5">
 					<div class="flex items-center justify-between text-xs font-medium">
-						<span class="text-blue-700 dark:text-blue-300">進捗ページ数</span>
+						<span class="text-blue-700 dark:text-blue-300">{m.progress_pages()}</span>
 						<span class="font-bold text-foreground">
-							{currentPage} / {totalPages || '?'} ページ
+							{currentPage} / {totalPages || '?'}
+							{m.pages()}
 							{#if totalPages > 0}
 								({Math.round((currentPage / totalPages) * 100)}%)
 							{/if}
@@ -244,7 +271,7 @@
 							bind:value={currentPage}
 							class="h-8 w-24 text-xs"
 						/>
-						<span class="text-xs text-muted-foreground">ページまで読んだ</span>
+						<span class="text-xs text-muted-foreground">{m.read_up_to_page()}</span>
 					</div>
 				</div>
 			{/if}
@@ -265,7 +292,7 @@
 					bind:value={reviewContent}
 					rows="3"
 					maxlength="1000"
-					placeholder="読んだ感想や心に残ったフレーズをメモ..."
+					placeholder={m.review_placeholder()}
 					class="w-full rounded-xl border border-border/60 bg-card/60 p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none sm:text-sm"
 				></textarea>
 
@@ -274,26 +301,48 @@
 					<input
 						type="checkbox"
 						bind:checked={hasSpoiler}
-						class="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
+						class="h-4 w-4 rounded border-border text-primary focus:ring-primary"
 					/>
 					<span class="text-xs text-muted-foreground">{m.spoiler_warning()}</span>
 				</label>
 			</div>
 
-			<!-- Actions -->
-			<div class="flex items-center justify-end gap-2 border-t border-border/40 pt-2">
+			<!-- Crosspost Toggle (Preview for Step 7) -->
+			<div
+				class="flex items-center justify-between rounded-xl border border-border/60 bg-card/40 p-3 text-xs"
+			>
+				<div class="flex items-center gap-2">
+					<Share2 class="h-4 w-4 text-sky-500" />
+					<span class="font-medium text-foreground">{m.crosspost_bluesky()}</span>
+				</div>
+				<input
+					type="checkbox"
+					bind:checked={crosspostToBluesky}
+					class="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+				/>
+			</div>
+
+			<!-- Modal Footer Actions -->
+			<div class="flex items-center justify-end gap-2 border-t border-border/40 pt-4">
 				<Button variant="outline" size="sm" onclick={onClose} disabled={isSaving}>
 					{m.cancel()}
 				</Button>
-				<Button size="sm" onclick={handleSave} disabled={isSaving} class="gap-1.5 px-5">
+
+				<Button
+					size="sm"
+					onclick={handleSave}
+					disabled={isSaving}
+					class="gap-1.5 font-semibold shadow-xs"
+				>
 					{#if isSaving}
 						<span
-							class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+							class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"
 						></span>
+						<span>{m.save()}...</span>
 					{:else}
-						<Check class="h-3.5 w-3.5" />
+						<Save class="h-3.5 w-3.5" />
+						<span>{m.save_to_pds()}</span>
 					{/if}
-					<span>{m.save()}</span>
 				</Button>
 			</div>
 		</div>

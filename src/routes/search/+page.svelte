@@ -1,60 +1,55 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import * as m from '$lib/paraglide/messages';
 	import { searchBooks } from '$lib/services/bookSearch';
+	import { getAllReadingRecords } from '$lib/services/bookRecord';
 	import type { BookRef, ReadingStatusType } from '$lib/types/book';
-	import { db } from '$lib/db';
 	import { Input } from '$lib/components/ui/input';
 	import BookGrid from '$lib/components/book/BookGrid.svelte';
 	import BookSkeleton from '$lib/components/book/BookSkeleton.svelte';
 	import BookRecordModal from '$lib/components/book/BookRecordModal.svelte';
-	import { Search, Sparkles, BookX, X } from '@lucide/svelte';
+	import { Search, Sparkles, X, BookX } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
+	import { onMount } from 'svelte';
 
 	let searchQuery = $state('');
 	let searchResults = $state<BookRef[]>([]);
 	let isLoading = $state(false);
 	let hasSearched = $state(false);
-	let debounceTimer: ReturnType<typeof setTimeout>;
 
-	let statusMap = new SvelteMap<string, ReadingStatusType>();
 	let selectedBookForModal = $state<BookRef | null>(null);
 	let isModalOpen = $state(false);
 
+	const statusMap = new SvelteMap<string, ReadingStatusType>();
+
 	const popularSuggestions = [
 		'SvelteKit',
-		'TypeScript',
 		'Deno',
-		'村上春樹',
-		'SF小説',
-		'デザインシステム'
+		'TypeScript',
+		'AT Protocol',
+		'Haruki Murakami',
+		'Sci-Fi'
 	];
 
-	onMount(async () => {
-		await loadStatusMap();
-	});
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-	async function loadStatusMap() {
-		if (typeof indexedDB === 'undefined') return;
+	onMount(async () => {
 		try {
-			const statuses = await db.readingStatuses.toArray();
-			statusMap.clear();
-			for (const item of statuses) {
-				const key = item.book?.isbn13 || item.book?.title;
+			const shelfItems = await getAllReadingRecords();
+			for (const item of shelfItems) {
+				const key = item.book.isbn13 || item.book.title;
 				if (key) {
-					statusMap.set(key, item.status);
+					statusMap.set(key, item.statusRecord.status);
 				}
 			}
-		} catch {
-			// Ignore
+		} catch (err) {
+			console.warn('Failed to load shelf status cache for search view:', err);
 		}
-	}
+	});
 
-	function onQueryChange() {
-		clearTimeout(debounceTimer);
-		const q = searchQuery.trim();
-		if (!q) {
+	async function performSearch(query: string) {
+		const trimmed = query.trim();
+		if (!trimmed) {
 			searchResults = [];
 			hasSearched = false;
 			isLoading = false;
@@ -62,39 +57,39 @@
 		}
 
 		isLoading = true;
-		debounceTimer = setTimeout(() => {
-			executeSearch(q);
-		}, 300);
-	}
-
-	async function executeSearch(query: string) {
-		const q = query.trim();
-		if (!q) return;
-
-		isLoading = true;
 		hasSearched = true;
 
 		try {
-			const books = await searchBooks(q);
-			searchResults = books;
-		} catch (error) {
-			console.error('Search failed:', error);
-			toast.error('検索中にエラーが発生しました');
+			const results = await searchBooks(trimmed);
+			searchResults = results;
+		} catch (err) {
+			console.error('Book search error:', err);
+			toast.error(m.search_error());
+			searchResults = [];
 		} finally {
 			isLoading = false;
 		}
 	}
 
+	function onQueryChange(e: Event) {
+		const target = e.target as HTMLInputElement;
+		searchQuery = target.value;
+
+		if (debounceTimer) clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => {
+			performSearch(searchQuery);
+		}, 300);
+	}
+
 	function handleSuggestionClick(term: string) {
 		searchQuery = term;
-		executeSearch(term);
+		performSearch(term);
 	}
 
 	function clearSearch() {
 		searchQuery = '';
 		searchResults = [];
 		hasSearched = false;
-		isLoading = false;
 	}
 
 	function handleSelectBook(book: BookRef) {
@@ -123,7 +118,7 @@
 			{m.search()}
 		</h1>
 		<p class="text-xs text-muted-foreground sm:text-sm">
-			Google Books と openBD を横断し、和書・洋書の書誌・書影を高精度に検索します。
+			{m.search_subtitle()}
 		</p>
 
 		<!-- Search Input Box -->
@@ -159,7 +154,7 @@
 		<div class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
 			<span class="mr-1 flex items-center gap-1 text-xs text-muted-foreground">
 				<Sparkles class="h-3 w-3 text-sky-500" />
-				おすすめ:
+				{m.search_recommended()}
 			</span>
 			{#each popularSuggestions as suggestion (suggestion)}
 				<button
@@ -180,7 +175,7 @@
 		{:else if searchResults.length > 0}
 			<div class="space-y-4">
 				<div class="flex items-center justify-between px-1 text-xs text-muted-foreground">
-					<span>検索結果: {searchResults.length} 件</span>
+					<span>{m.search_results_count({ count: searchResults.length })}</span>
 				</div>
 				<BookGrid books={searchResults} {statusMap} onSelectBook={handleSelectBook} />
 			</div>
@@ -192,9 +187,9 @@
 				>
 					<BookX class="h-6 w-6 opacity-60" />
 				</div>
-				<h2 class="text-base font-bold text-foreground">該当する本が見つかりませんでした</h2>
+				<h2 class="text-base font-bold text-foreground">{m.search_not_found_title()}</h2>
 				<p class="max-w-sm text-xs text-muted-foreground">
-					キーワードやISBN（ハイフン有無どちらでも可）をご確認の上、もう一度お試しください。
+					{m.search_not_found_desc()}
 				</p>
 			</div>
 		{:else}
@@ -205,9 +200,9 @@
 				>
 					<Search class="h-6 w-6" />
 				</div>
-				<h2 class="text-base font-semibold text-foreground">気になる本を探してみましょう</h2>
+				<h2 class="text-base font-semibold text-foreground">{m.search_hint_title()}</h2>
 				<p class="max-w-sm text-xs text-muted-foreground">
-					タイトル、著者名、または13桁/10桁のISBNを入力すると、自動で書誌情報を取得します。
+					{m.search_hint_desc()}
 				</p>
 			</div>
 		{/if}
