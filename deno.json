@@ -1,0 +1,14 @@
+{
+  "nodeModulesDir": "auto",
+  "tasks": {
+    "dev": "deno run -A --node-modules-dir npm:vite dev --host",
+    "build": "deno run -A --node-modules-dir npm:vite build",
+    "preview": "deno run -A --node-modules-dir npm:vite preview",
+    "check": "deno run -A --node-modules-dir npm:svelte-check --tsconfig ./tsconfig.json",
+    "lint": "deno run -A --node-modules-dir npm:prettier --check . && deno run -A --node-modules-dir npm:eslint .",
+    "format": "deno run -A --node-modules-dir npm:prettier --write ."
+  },
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext", "deno.ns"]
+  }
+}
