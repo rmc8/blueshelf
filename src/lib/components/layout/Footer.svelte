@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
-	import { ExternalLink, Globe } from '@lucide/svelte';
+	import { Globe } from '@lucide/svelte';
 </script>
 
 <footer
@@ -51,10 +51,18 @@
 								href="https://bsky.app/profile/blueshelf.bsky.social"
 								target="_blank"
 								rel="noreferrer"
-								class="flex items-center gap-1 transition-colors hover:text-foreground"
+								class="flex items-center gap-1.5 transition-colors hover:text-foreground"
 							>
+								<svg
+									class="h-3 w-3 fill-current text-sky-500"
+									viewBox="0 0 568 501"
+									aria-hidden="true"
+								>
+									<path
+										d="M123.121 33.664C188.241 82.553 258.281 181.68 284 234.873c25.719-53.192 95.759-152.32 160.879-201.21C491.866-1.611 568-28.906 568 57.947c0 17.346-9.945 145.713-15.778 166.555-20.275 72.453-94.155 90.933-159.875 79.748C507.222 323.8 536.444 388.56 473.333 453.32c-119.25 122.392-162.226-30.841-182.099-92.42-2.91-9.02-5.918-17.752-7.234-21.354-1.316 3.602-4.324 12.334-7.234 21.354-19.873 61.579-62.849 214.812-182.099 92.42-63.111-64.76-33.889-129.52 80.986-149.07-65.72 11.185-139.6-7.295-159.875-79.748C9.945 203.66 0 75.293 0 57.947 0-28.906 76.135-1.612 123.121 33.664Z"
+									/>
+								</svg>
 								<span>{m.footer_bsky_official()}</span>
-								<ExternalLink class="h-2.5 w-2.5" />
 							</a>
 						</li>
 						<li>
@@ -62,10 +70,16 @@
 								href="https://atproto.com"
 								target="_blank"
 								rel="noreferrer"
-								class="flex items-center gap-1 transition-colors hover:text-foreground"
+								class="flex items-center gap-1.5 transition-colors hover:text-foreground"
 							>
+								<svg
+									class="h-3 w-3 fill-current text-sky-600 dark:text-sky-400"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path d="M12 2L2 19.5h20L12 2zm0 3.84L18.48 17.5H5.52L12 5.84z" />
+								</svg>
 								<span>AT Protocol</span>
-								<ExternalLink class="h-2.5 w-2.5" />
 							</a>
 						</li>
 					</ul>
@@ -81,7 +95,7 @@
 								rel="noreferrer"
 								class="flex items-center gap-1.5 transition-colors hover:text-foreground"
 							>
-								<Globe class="h-3 w-3" />
+								<Globe class="h-3 w-3 text-muted-foreground" />
 								<span>rmc-8.com</span>
 							</a>
 						</li>
@@ -90,10 +104,18 @@
 								href="https://bsky.app/profile/k.rmc-8.com"
 								target="_blank"
 								rel="noreferrer"
-								class="flex items-center gap-1 transition-colors hover:text-foreground"
+								class="flex items-center gap-1.5 transition-colors hover:text-foreground"
 							>
+								<svg
+									class="h-3 w-3 fill-current text-sky-500"
+									viewBox="0 0 568 501"
+									aria-hidden="true"
+								>
+									<path
+										d="M123.121 33.664C188.241 82.553 258.281 181.68 284 234.873c25.719-53.192 95.759-152.32 160.879-201.21C491.866-1.611 568-28.906 568 57.947c0 17.346-9.945 145.713-15.778 166.555-20.275 72.453-94.155 90.933-159.875 79.748C507.222 323.8 536.444 388.56 473.333 453.32c-119.25 122.392-162.226-30.841-182.099-92.42-2.91-9.02-5.918-17.752-7.234-21.354-1.316 3.602-4.324 12.334-7.234 21.354-19.873 61.579-62.849 214.812-182.099 92.42-63.111-64.76-33.889-129.52 80.986-149.07-65.72 11.185-139.6-7.295-159.875-79.748C9.945 203.66 0 75.293 0 57.947 0-28.906 76.135-1.612 123.121 33.664Z"
+									/>
+								</svg>
 								<span>@k.rmc-8.com</span>
-								<ExternalLink class="h-2.5 w-2.5" />
 							</a>
 						</li>
 						<li>
@@ -103,7 +125,11 @@
 								rel="noreferrer"
 								class="flex items-center gap-1.5 transition-colors hover:text-foreground"
 							>
-								<svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+								<svg
+									class="h-3 w-3 fill-current text-muted-foreground"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
 									<path
 										fill-rule="evenodd"
 										clip-rule="evenodd"
