@@ -85,9 +85,10 @@
 	"auth_in_progress_desc": "Resolving AT Protocol authentication session.",
 	"auth_success_title": "Login successful!",
 	"auth_success_desc": "Redirecting to your bookshelf...",
-	"auth_failed_title": "Login failed",
+	"auth_failed_title": "Login Failed",
+	"auth_failed_desc": "Failed to resolve authentication session. Please try again.",
 	"login_error_empty_handle": "Please enter your Bluesky handle (e.g. handle.bsky.social)",
-	"login_error_generic": "Failed to start sign in.",
+	"login_error_generic": "Failed to initiate login.",
 	"save_success": "Saved successfully!",
 	"save_error": "An error occurred while saving"
 }

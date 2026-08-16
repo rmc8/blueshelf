@@ -86,6 +86,7 @@
 	"auth_success_title": "ログイン完了！",
 	"auth_success_desc": "マイ本棚へ移動しています...",
 	"auth_failed_title": "ログインに失敗しました",
+	"auth_failed_desc": "認証セッションの復元に失敗しました。もう一度お試しください。",
 	"login_error_empty_handle": "Bluesky のハンドル名を入力してください（例: handle.bsky.social）",
 	"login_error_generic": "ログインの開始に失敗しました。",
 	"save_success": "保存しました！",
