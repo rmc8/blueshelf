@@ -5,20 +5,13 @@ let oauthClient: BrowserOAuthClient | null = null;
 let currentSession: OAuthSession | null = null;
 let currentAgent: Agent | null = null;
 
-/**
- * 現在のクライアントメタデータURLを判定
- */
-export function getClientMetadataUrl(): string {
-	if (typeof window === 'undefined') {
-		return 'https://blueshelf.app/oauth/client-metadata.json';
-	}
-	const origin = window.location.origin;
-	// 開発環境（127.0.0.1 / localhost）対応
-	if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-		// ATProto OAuth の仕様では loopback は http://127.0.0.1:port/oauth/client-metadata.json 形式
-		return `${origin}/oauth/client-metadata.json`;
-	}
-	return 'https://blueshelf.app/oauth/client-metadata.json';
+function isLoopback(hostname: string): boolean {
+	return (
+		hostname === 'localhost' ||
+		hostname === '127.0.0.1' ||
+		hostname === '[::1]' ||
+		hostname.endsWith('.localhost')
+	);
 }
 
 /**
@@ -29,26 +22,27 @@ export async function getOAuthClient(): Promise<BrowserOAuthClient | null> {
 	if (oauthClient) return oauthClient;
 
 	try {
-		const clientId = getClientMetadataUrl();
-		oauthClient = new BrowserOAuthClient({
-			clientMetadata: {
-				client_id: clientId,
-				client_name: 'Blueshelf',
-				client_uri: window.location.origin,
-				logo_uri: `${window.location.origin}/img/logo/shelfsky.svg`,
-				redirect_uris: [`${window.location.origin}/oauth/callback`],
-				grant_types: ['authorization_code', 'refresh_token'],
-				response_types: ['code'],
-				scope: 'atproto transition:generic',
-				token_endpoint_auth_method: 'none',
-				dpop_bound_access_tokens: true
-			},
-			handleResolver: 'https://bsky.social'
-		});
+		const isDev = isLoopback(window.location.hostname);
+		const origin = window.location.origin;
+
+		if (isDev) {
+			// ローカル開発環境: BrowserOAuthClient の自動 Loopback Metadata 生成を使用
+			oauthClient = new BrowserOAuthClient({
+				handleResolver: 'https://bsky.social'
+			});
+		} else {
+			// 本番環境: HTTPS client-metadata.json からロード
+			const clientId = `${origin}/oauth/client-metadata.json`;
+			oauthClient = await BrowserOAuthClient.load({
+				clientId,
+				handleResolver: 'https://bsky.social'
+			});
+		}
+
 		return oauthClient;
 	} catch (err) {
-		console.warn('Failed to initialize BrowserOAuthClient:', err);
-		return null;
+		console.error('Failed to initialize BrowserOAuthClient:', err);
+		throw err;
 	}
 }
 
@@ -61,10 +55,10 @@ export async function initSession(): Promise<{
 }> {
 	if (typeof window === 'undefined') return { session: null, agent: null };
 
-	const client = await getOAuthClient();
-	if (!client) return { session: null, agent: null };
-
 	try {
+		const client = await getOAuthClient();
+		if (!client) return { session: null, agent: null };
+
 		const result = await client.init();
 		if (result?.session) {
 			currentSession = result.session;
@@ -83,13 +77,13 @@ export async function initSession(): Promise<{
  */
 export async function signIn(handle: string): Promise<void> {
 	const client = await getOAuthClient();
-	if (!client) throw new Error('OAuth Client not initialized');
+	if (!client) throw new Error('OAuthクライアントの初期化に失敗しました');
 
 	// ハンドル名のクリーンアップ（@があれば削除）
 	const cleanHandle = handle.trim().replace(/^@/, '');
-	if (!cleanHandle) throw new Error('ハンドル名を入力してください');
+	if (!cleanHandle) throw new Error('Bluesky のハンドル名を入力してください');
 
-	// 認可フローの開始
+	// 認可フローの開始（Bluesky / PDS のログイン画面へリダイレクト）
 	await client.signIn(cleanHandle, {
 		scope: 'atproto transition:generic'
 	});
