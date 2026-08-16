@@ -5,10 +5,17 @@
 		rating?: number; // 0〜5
 		maxRating?: number;
 		readonly?: boolean;
+		size?: 'sm' | 'md' | 'lg';
 		onChange?: (rating: number) => void;
 	}
 
-	let { rating = 0, maxRating = 5, readonly = false, onChange }: Props = $props();
+	let { rating = 0, maxRating = 5, readonly = false, size = 'md', onChange }: Props = $props();
+
+	const starSizeClass = $derived.by(() => {
+		if (size === 'sm') return 'h-4 w-4';
+		if (size === 'lg') return 'h-7 w-7';
+		return 'h-6 w-6';
+	});
 
 	let hoverRating = $state(0);
 
@@ -47,7 +54,7 @@
 			aria-label="{star} stars"
 		>
 			<Star
-				class="h-6 w-6 transition-colors {isFilled
+				class="{starSizeClass} transition-colors {isFilled
 					? 'fill-amber-400 text-amber-400 dark:fill-amber-400 dark:text-amber-400'
 					: 'fill-transparent text-muted-foreground/40 hover:text-amber-400/60'}"
 			/>

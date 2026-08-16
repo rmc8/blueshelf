@@ -65,7 +65,7 @@ async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
 }
 
 /**
- * キーワードによるハイブリッド検索（Google Books -> Open Library -> openBD 書影補完）
+ * キーワードによるハイブリッド検索（Google Books -> NDL 国立国会図書館サーチ -> Open Library -> openBD 書影補完）
  */
 async function fetchByKeyword(query: string, maxResults: number): Promise<BookRef[]> {
 	// 1. Google Books API を試行
@@ -74,13 +74,97 @@ async function fetchByKeyword(query: string, maxResults: number): Promise<BookRe
 		return gbooks;
 	}
 
-	// 2. Google Books 制限(429)時、Open Library API (CORS完全対応・グローバル書誌) を実行
+	// 2. Google Books 制限(429) / ヒットなし時、NDL (国立国会図書館サーチ OpenSearch) + openBD 書影補完を実行
+	const ndlBooks = await fetchNdlSearch(query, maxResults);
+	if (ndlBooks.length > 0) {
+		return ndlBooks;
+	}
+
+	// 3. Open Library API (洋書・グローバル書誌) をフォールバック実行
 	const olBooks = await fetchOpenLibrary(query, maxResults);
 	if (olBooks.length > 0) {
 		return olBooks;
 	}
 
 	return [];
+}
+
+/**
+ * 国立国会図書館サーチ (NDL OpenSearch API) + openBD 公式書影補完
+ */
+async function fetchNdlSearch(query: string, maxResults = 20): Promise<BookRef[]> {
+	try {
+		const url = `https://ndlsearch.ndl.go.jp/api/opensearch?any=${encodeURIComponent(query)}&cnt=${maxResults}`;
+		const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+		if (!res.ok) return [];
+
+		const xml = await res.text();
+		const items = xml.split('<item>').slice(1);
+		if (items.length === 0) return [];
+
+		const isbnsToLookup: string[] = [];
+		const rawBooks: BookRef[] = [];
+
+		for (const itemXml of items) {
+			const titleMatch = /<dc:title>([^<]+)<\/dc:title>|<title>([^<]+)<\/title>/.exec(itemXml);
+			const title = titleMatch ? (titleMatch[1] || titleMatch[2]).trim() : '';
+			if (!title) continue;
+
+			// 著者名
+			const authorMatch = /<dc:creator>([^<]+)<\/dc:creator>|<author>([^<]+)<\/author>/.exec(
+				itemXml
+			);
+			const author = authorMatch ? (authorMatch[1] || authorMatch[2]).trim() : undefined;
+			const authors = author ? [author.replace(/,\s*\d{4}-?/g, '')] : ['不明な著者'];
+
+			// 出版社
+			const pubMatch = /<dc:publisher>([^<]+)<\/dc:publisher>/.exec(itemXml);
+			const publisher = pubMatch ? pubMatch[1].trim() : undefined;
+
+			// 出版日
+			const dateMatch =
+				/<dcterms:issued>([^<]+)<\/dcterms:issued>|<dc:date[^>]*>([^<]+)<\/dc:date>/.exec(itemXml);
+			const publishedDate = dateMatch ? (dateMatch[1] || dateMatch[2]).trim() : undefined;
+
+			// ISBN
+			const isbnMatch = /<dc:identifier[^>]*ISBN[^>]*>([0-9Xx-]+)<\/dc:identifier>/.exec(itemXml);
+			const cleanedIsbn = isbnMatch ? isbnMatch[1].replace(/-/g, '').trim() : undefined;
+			const isbn13 = cleanedIsbn && cleanedIsbn.length === 13 ? cleanedIsbn : undefined;
+			const isbn10 = cleanedIsbn && cleanedIsbn.length === 10 ? cleanedIsbn : undefined;
+
+			if (isbn13) {
+				isbnsToLookup.push(isbn13);
+			}
+
+			rawBooks.push({
+				isbn13,
+				isbn10,
+				title,
+				authors,
+				publisher,
+				publishedDate
+			});
+		}
+
+		// openBD から公式書影・解説を一括取得
+		const openbdMap = await fetchOpenBdBatches(isbnsToLookup);
+
+		return rawBooks.map((book) => {
+			if (book.isbn13 && openbdMap.has(book.isbn13)) {
+				const bd = openbdMap.get(book.isbn13)!;
+				return {
+					...book,
+					coverUrl: bd.coverUrl || book.coverUrl,
+					description: bd.description || book.description,
+					publisher: bd.publisher || book.publisher
+				};
+			}
+			return book;
+		});
+	} catch (e) {
+		console.warn('NDL search failed:', e);
+		return [];
+	}
 }
 
 /**

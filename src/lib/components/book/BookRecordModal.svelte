@@ -15,7 +15,7 @@
 		Share2,
 		Save
 	} from '@lucide/svelte';
-	import * as m from '$lib/paraglide/messages';
+	import * as m from '$lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {
@@ -108,28 +108,102 @@
 		}
 	}
 
+	import { authState } from '$lib/stores/auth.svelte';
+	import { postToBluesky, buildCrosspostText } from '$lib/services/atproto/crosspost';
+	import { saveQuoteRecord, createQuoteRecord } from '$lib/services/quoteRecord';
+
+	let activeModalTab = $state<'record' | 'quote'>('record');
+	let quoteText = $state('');
+	let quotePage = $state<number | undefined>(undefined);
+	let quoteComment = $state('');
+
 	async function handleSave() {
 		if (!book) return;
 		isSaving = true;
 
 		try {
-			await saveReadingRecord({
-				book,
-				status: selectedStatus,
-				currentPage: selectedStatus === 'reading' ? currentPage : undefined,
-				rating: rating > 0 ? rating : undefined,
-				reviewContent: reviewContent.trim() || undefined,
-				hasSpoiler: reviewContent.trim() ? hasSpoiler : undefined
-			});
+			if (activeModalTab === 'record') {
+				// 1. PDS への読書記録保存
+				await saveReadingRecord({
+					book,
+					status: selectedStatus,
+					currentPage: selectedStatus === 'reading' ? currentPage : undefined,
+					rating: rating > 0 ? rating : undefined,
+					reviewContent: reviewContent.trim() || undefined,
+					hasSpoiler: reviewContent.trim() ? hasSpoiler : undefined
+				});
 
-			toast.success(m.save_success());
+				// 2. Bluesky クロスポスト
+				if (crosspostToBluesky && authState.agent) {
+					try {
+						const text = buildCrosspostText({
+							book,
+							status: selectedStatus,
+							rating: rating > 0 ? rating : undefined,
+							reviewText: reviewContent.trim() || undefined
+						});
+						const currentUrl =
+							typeof window !== 'undefined' ? window.location.origin : 'https://bs.rmc-8.com';
+						const detailUrl = `${currentUrl}/search?q=${encodeURIComponent(book.isbn13 || book.title)}`;
 
-			if (onSaved) {
-				onSaved(selectedStatus);
+						await postToBluesky(authState.agent, {
+							text,
+							book,
+							url: detailUrl,
+							description: reviewContent.trim() || undefined
+						});
+						toast.success(m.crosspost_success());
+					} catch (crosspostErr) {
+						console.warn('Crosspost failed:', crosspostErr);
+					}
+				}
+
+				toast.success(m.save_success());
+
+				if (onSaved) {
+					onSaved(selectedStatus);
+				}
+			} else {
+				// 引用・フレーズの保存
+				if (!quoteText.trim()) {
+					toast.error('引用フレーズを入力してください');
+					isSaving = false;
+					return;
+				}
+
+				if (authState.agent) {
+					const quote = createQuoteRecord({
+						book,
+						quoteText,
+						pageNumber: quotePage,
+						comment: quoteComment
+					});
+					await saveQuoteRecord(authState.agent, quote);
+
+					if (crosspostToBluesky) {
+						const text = buildCrosspostText({
+							book,
+							quoteText,
+							pageNumber: quotePage
+						});
+						const currentUrl =
+							typeof window !== 'undefined' ? window.location.origin : 'https://bs.rmc-8.com';
+						await postToBluesky(authState.agent, {
+							text,
+							book,
+							url: `${currentUrl}/search?q=${encodeURIComponent(book.isbn13 || book.title)}`,
+							description: quoteComment.trim() || undefined
+						});
+						toast.success(m.crosspost_success());
+					}
+
+					toast.success(m.quote_save_success());
+				}
 			}
+
 			onClose();
 		} catch (err) {
-			console.error('Failed to save book record:', err);
+			console.error('Failed to save book record / quote:', err);
 			toast.error(m.save_error());
 		} finally {
 			isSaving = false;
@@ -220,100 +294,172 @@
 				</div>
 			</div>
 
-			<!-- Status Selector -->
-			<div class="space-y-2">
-				<span class="text-xs font-semibold text-foreground">{m.status_label()}</span>
-				<div class="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
-					{#each statuses as s (s.type)}
-						{@const isSelected = selectedStatus === s.type}
-						{@const Icon = s.icon}
-						<button
-							type="button"
-							onclick={() => (selectedStatus = s.type)}
-							class="flex flex-col items-center justify-center gap-1.5 rounded-xl border px-1 py-2.5 text-xs font-medium transition-all {isSelected
-								? `${s.color} scale-102 border-current font-bold shadow-xs`
-								: 'border-border/60 bg-card/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground'}"
-						>
-							<Icon class="h-4 w-4" />
-							<span class="text-[11px]">{s.label()}</span>
-						</button>
-					{/each}
-				</div>
+			<!-- Modal Tab Switcher -->
+			<div class="flex rounded-xl border border-border/60 bg-muted/40 p-1">
+				<button
+					type="button"
+					onclick={() => (activeModalTab = 'record')}
+					class="flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all {activeModalTab ===
+					'record'
+						? 'bg-card text-foreground shadow-xs'
+						: 'text-muted-foreground hover:text-foreground'}"
+				>
+					{m.my_shelf()}
+				</button>
+				<button
+					type="button"
+					onclick={() => (activeModalTab = 'quote')}
+					class="flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all {activeModalTab ===
+					'quote'
+						? 'bg-card text-foreground shadow-xs'
+						: 'text-muted-foreground hover:text-foreground'}"
+				>
+					{m.quotes_title()}
+				</button>
 			</div>
 
-			<!-- Reading Progress (If Reading) -->
-			{#if selectedStatus === 'reading'}
-				<div class="space-y-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3.5">
-					<div class="flex items-center justify-between text-xs font-medium">
-						<span class="text-blue-700 dark:text-blue-300">{m.progress_pages()}</span>
-						<span class="font-bold text-foreground">
-							{currentPage} / {totalPages || '?'}
-							{m.pages()}
-							{#if totalPages > 0}
-								({Math.round((currentPage / totalPages) * 100)}%)
-							{/if}
-						</span>
+			{#if activeModalTab === 'record'}
+				<!-- Status Selector -->
+				<div class="space-y-2">
+					<span class="text-xs font-semibold text-foreground">{m.status_label()}</span>
+					<div class="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+						{#each statuses as s (s.type)}
+							{@const isSelected = selectedStatus === s.type}
+							{@const Icon = s.icon}
+							<button
+								type="button"
+								onclick={() => (selectedStatus = s.type)}
+								class="flex flex-col items-center justify-center gap-1.5 rounded-xl border px-1 py-2.5 text-xs font-medium transition-all {isSelected
+									? `${s.color} scale-102 border-current font-bold shadow-xs`
+									: 'border-border/60 bg-card/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground'}"
+							>
+								<Icon class="h-4 w-4" />
+								<span class="text-[11px]">{s.label()}</span>
+							</button>
+						{/each}
 					</div>
-					{#if totalPages > 0}
+				</div>
+
+				<!-- Reading Progress (If Reading) -->
+				{#if selectedStatus === 'reading'}
+					<div class="space-y-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3.5">
+						<div class="flex items-center justify-between text-xs font-medium">
+							<span class="text-blue-700 dark:text-blue-300">{m.progress_pages()}</span>
+							<span class="font-bold text-foreground">
+								{currentPage} / {totalPages || '?'}
+								{m.pages()}
+								{#if totalPages > 0}
+									({Math.round((currentPage / totalPages) * 100)}%)
+								{/if}
+							</span>
+						</div>
+						{#if totalPages > 0}
+							<input
+								type="range"
+								min="0"
+								max={totalPages}
+								bind:value={currentPage}
+								class="h-1.5 w-full cursor-pointer rounded-lg bg-muted accent-blue-600"
+							/>
+						{/if}
+						<div class="flex items-center gap-2 pt-1">
+							<Input
+								type="number"
+								min="0"
+								max={totalPages || 9999}
+								bind:value={currentPage}
+								class="h-8 w-24 text-xs"
+							/>
+							<span class="text-xs text-muted-foreground">{m.read_up_to_page()}</span>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Star Rating -->
+				<div class="space-y-1.5">
+					<span class="text-xs font-semibold text-foreground">{m.rating()}</span>
+					<StarRating {rating} onChange={(r) => (rating = r)} />
+				</div>
+
+				<!-- Review & Thoughts Area -->
+				<div class="space-y-2">
+					<div class="flex items-center justify-between">
+						<span class="text-xs font-semibold text-foreground">{m.write_review()}</span>
+						<span class="text-[11px] text-muted-foreground">{reviewContent.length} / 1000</span>
+					</div>
+					<textarea
+						bind:value={reviewContent}
+						rows="3"
+						maxlength="1000"
+						placeholder={m.review_placeholder()}
+						class="w-full rounded-xl border border-border/60 bg-card/60 p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none sm:text-sm"
+					></textarea>
+
+					<!-- Spoiler Checkbox -->
+					<label class="flex cursor-pointer items-center gap-2 pt-0.5">
 						<input
-							type="range"
-							min="0"
-							max={totalPages}
-							bind:value={currentPage}
-							class="h-1.5 w-full cursor-pointer rounded-lg bg-muted accent-blue-600"
+							type="checkbox"
+							bind:checked={hasSpoiler}
+							class="h-4 w-4 rounded border-border text-primary focus:ring-primary"
 						/>
-					{/if}
-					<div class="flex items-center gap-2 pt-1">
-						<Input
-							type="number"
-							min="0"
-							max={totalPages || 9999}
-							bind:value={currentPage}
-							class="h-8 w-24 text-xs"
-						/>
-						<span class="text-xs text-muted-foreground">{m.read_up_to_page()}</span>
+						<span class="text-xs text-muted-foreground">{m.spoiler_warning()}</span>
+					</label>
+				</div>
+			{:else}
+				<!-- Quote Recording Form -->
+				<div class="space-y-3">
+					<div class="space-y-1">
+						<label for="quote-text" class="text-xs font-semibold text-foreground">
+							{m.quote_label()} <span class="text-destructive">*</span>
+						</label>
+						<textarea
+							id="quote-text"
+							bind:value={quoteText}
+							rows="4"
+							maxlength="1000"
+							placeholder="心に残った文章や名言を入力..."
+							class="w-full rounded-xl border border-border/60 bg-card/60 p-3 text-xs text-foreground italic placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none sm:text-sm"
+						></textarea>
+					</div>
+
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						<div class="space-y-1">
+							<label for="quote-page" class="text-xs font-semibold text-foreground">
+								{m.quote_page_label()}
+							</label>
+							<Input
+								id="quote-page"
+								type="number"
+								min="1"
+								bind:value={quotePage}
+								placeholder="例: 142"
+								class="h-8 text-xs"
+							/>
+						</div>
+
+						<div class="space-y-1 sm:col-span-2">
+							<label for="quote-comment" class="text-xs font-semibold text-foreground">
+								{m.quote_comment_label()}
+							</label>
+							<Input
+								id="quote-comment"
+								type="text"
+								bind:value={quoteComment}
+								placeholder="自分用のメモや感想..."
+								class="h-8 text-xs"
+							/>
+						</div>
 					</div>
 				</div>
 			{/if}
 
-			<!-- Star Rating -->
-			<div class="space-y-1.5">
-				<span class="text-xs font-semibold text-foreground">{m.rating()}</span>
-				<StarRating {rating} onChange={(r) => (rating = r)} />
-			</div>
-
-			<!-- Review & Thoughts Area -->
-			<div class="space-y-2">
-				<div class="flex items-center justify-between">
-					<span class="text-xs font-semibold text-foreground">{m.write_review()}</span>
-					<span class="text-[11px] text-muted-foreground">{reviewContent.length} / 1000</span>
-				</div>
-				<textarea
-					bind:value={reviewContent}
-					rows="3"
-					maxlength="1000"
-					placeholder={m.review_placeholder()}
-					class="w-full rounded-xl border border-border/60 bg-card/60 p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none sm:text-sm"
-				></textarea>
-
-				<!-- Spoiler Checkbox -->
-				<label class="flex cursor-pointer items-center gap-2 pt-0.5">
-					<input
-						type="checkbox"
-						bind:checked={hasSpoiler}
-						class="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-					/>
-					<span class="text-xs text-muted-foreground">{m.spoiler_warning()}</span>
-				</label>
-			</div>
-
-			<!-- Crosspost Toggle (Preview for Step 7) -->
+			<!-- Crosspost Toggle -->
 			<div
 				class="flex items-center justify-between rounded-xl border border-border/60 bg-card/40 p-3 text-xs"
 			>
 				<div class="flex items-center gap-2">
 					<Share2 class="h-4 w-4 text-sky-500" />
-					<span class="font-medium text-foreground">{m.crosspost_bluesky()}</span>
+					<span class="font-medium text-foreground">{m.crosspost_to_bluesky()}</span>
 				</div>
 				<input
 					type="checkbox"

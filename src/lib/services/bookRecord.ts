@@ -5,6 +5,8 @@ import type {
 	ReviewRecord,
 	ReadingStatusType
 } from '$lib/types/book';
+
+export type { ReadingStatusRecord, ReviewRecord };
 import { getAgent, getSession } from '$lib/services/atproto/oauth';
 import {
 	putReadingStatusToPds,

@@ -40,6 +40,9 @@
 
 			<!-- Desktop Nav Links -->
 			<nav class="hidden items-center gap-5 text-sm font-medium text-muted-foreground md:flex">
+				<a href="/timeline" class="transition-colors hover:text-foreground">
+					{m.nav_timeline()}
+				</a>
 				<a href="/shelf" class="transition-colors hover:text-foreground">
 					{m.my_shelf()}
 				</a>
