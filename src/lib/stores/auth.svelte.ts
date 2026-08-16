@@ -63,44 +63,55 @@ class AuthState {
 	agent = $state<Agent | null>(null);
 	isLoading = $state(true);
 	isInitialized = $state(false);
+	initError = $state<string | null>(null);
+	private initPromise: Promise<void> | null = null;
 
 	get isAuthenticated(): boolean {
 		return this.user !== null;
 	}
 
 	/**
-	 * アプリ起動時にセッションを復元し、プロフィールを取得
+	 * アプリ起動時にセッションを復元し、プロフィールを取得 (競合防止シングルトン)
 	 */
-	async init() {
+	async init(): Promise<void> {
 		if (this.isInitialized) return;
-		this.isLoading = true;
+		if (this.initPromise) return this.initPromise;
 
-		try {
-			const { session, agent } = await initSession();
-			if (session && agent) {
-				this.agent = agent;
-				const profile = await resolveActorProfile(session.did, agent);
-				if (profile) {
-					this.user = profile;
+		this.initPromise = (async () => {
+			this.isLoading = true;
+			this.initError = null;
+
+			try {
+				const { session, agent } = await initSession();
+				if (session && agent) {
+					this.agent = agent;
+					const profile = await resolveActorProfile(session.did, agent);
+					if (profile) {
+						this.user = profile;
+					} else {
+						this.user = {
+							did: session.did,
+							handle: session.did,
+							displayName: session.did.slice(0, 16) + '...'
+						};
+					}
 				} else {
-					this.user = {
-						did: session.did,
-						handle: session.did,
-						displayName: session.did.slice(0, 16) + '...'
-					};
+					this.user = null;
+					this.agent = null;
 				}
-			} else {
+			} catch (err) {
+				console.warn('Auth initialization error:', err);
+				this.initError = err instanceof Error ? err.message : String(err);
 				this.user = null;
 				this.agent = null;
+			} finally {
+				this.isLoading = false;
+				this.isInitialized = true;
+				this.initPromise = null;
 			}
-		} catch (err) {
-			console.warn('Auth initialization error:', err);
-			this.user = null;
-			this.agent = null;
-		} finally {
-			this.isLoading = false;
-			this.isInitialized = true;
-		}
+		})();
+
+		return this.initPromise;
 	}
 
 	/**

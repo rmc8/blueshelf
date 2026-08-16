@@ -18,11 +18,11 @@
 				}, 1000);
 			} else {
 				status = 'error';
-				errorMessage = m.auth_failed_title();
+				errorMessage = authState.initError || m.auth_failed_desc();
 			}
 		} catch (err) {
 			status = 'error';
-			errorMessage = err instanceof Error ? err.message : m.auth_failed_title();
+			errorMessage = err instanceof Error ? err.message : m.auth_failed_desc();
 		}
 	});
 </script>
