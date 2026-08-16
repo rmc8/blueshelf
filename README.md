@@ -1,4 +1,4 @@
-# 📚 Blueshelf (ブルースエルフ)
+# 📚 Blueshelf (ブルーシェルフ)
 
 AT Protocol (Bluesky) 上で動作する、分散型・Zero-Secret な読書管理・ソーシャル Web / PWA アプリケーション。
 
