@@ -1,14 +1,18 @@
 {
-	"client_id": "https://blueshelf.app/oauth/client-metadata.json",
+	"client_id": "https://bs.rmc-8.com/oauth/client-metadata.json",
 	"client_name": "Blueshelf",
-	"client_uri": "https://blueshelf.app",
-	"logo_uri": "https://blueshelf.app/img/logo/shelfsky.svg",
-	"tos_uri": "https://blueshelf.app/tos",
-	"policy_uri": "https://blueshelf.app/privacy",
+	"client_uri": "https://bs.rmc-8.com",
+	"logo_uri": "https://bs.rmc-8.com/img/logo/shelfsky.svg",
+	"tos_uri": "https://bs.rmc-8.com",
+	"policy_uri": "https://bs.rmc-8.com",
 	"redirect_uris": [
-		"https://blueshelf.app/oauth/callback",
+		"https://bs.rmc-8.com/oauth/callback",
 		"http://127.0.0.1:5173/oauth/callback",
-		"http://127.0.0.1:4173/oauth/callback"
+		"http://localhost:5173/oauth/callback",
+		"http://127.0.0.1:4173/oauth/callback",
+		"http://localhost:4173/oauth/callback",
+		"http://127.0.0.1:4174/oauth/callback",
+		"http://localhost:4174/oauth/callback"
 	],
 	"grant_types": ["authorization_code", "refresh_token"],
 	"response_types": ["code"],
