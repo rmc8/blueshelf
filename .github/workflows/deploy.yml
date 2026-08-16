@@ -34,5 +34,5 @@ jobs:
         uses: denoland/deployctl@v1
         with:
           project: 'blueshelf'
-          entrypoint: 'server.ts'
+          entrypoint: 'server.js'
           root: '.'

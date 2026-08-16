@@ -1,10 +1,9 @@
-// @ts-nocheck
 import { serveDir } from 'jsr:@std/http@^1.0.0/file-server';
 
 /**
  * Deno Deploy 用の静的 SPA サーバー & OAuth メタデータ動的解決
  */
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req) => {
 	const url = new URL(req.url);
 
 	// ATProto OAuth client-metadata.json の動的配信
