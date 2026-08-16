@@ -1,4 +1,4 @@
-import { serveDir } from '@std/http/file-server';
+import { serveDir } from 'jsr:@std/http@^1.0.0/file-server';
 
 /**
  * Deno Deploy 用の静的 SPA サーバー
