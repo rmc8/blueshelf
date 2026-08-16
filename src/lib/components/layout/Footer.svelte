@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
-	import { ExternalLink } from '@lucide/svelte';
+	import { ExternalLink, Globe } from '@lucide/svelte';
 </script>
 
 <footer
@@ -73,8 +73,30 @@
 				</div>
 
 				<div class="space-y-2">
-					<p class="text-[11px] font-semibold text-foreground">オープンソース</p>
+					<p class="text-[11px] font-semibold text-foreground">作者 & OSS</p>
 					<ul class="space-y-1.5 text-[11px]">
+						<li>
+							<a
+								href="https://rmc-8.com"
+								target="_blank"
+								rel="noreferrer"
+								class="flex items-center gap-1.5 transition-colors hover:text-foreground"
+							>
+								<Globe class="h-3 w-3" />
+								<span>rmc-8.com</span>
+							</a>
+						</li>
+						<li>
+							<a
+								href="https://bsky.app/profile/k.rmc-8.com"
+								target="_blank"
+								rel="noreferrer"
+								class="flex items-center gap-1 transition-colors hover:text-foreground"
+							>
+								<span>@k.rmc-8.com</span>
+								<ExternalLink class="h-2.5 w-2.5" />
+							</a>
+						</li>
 						<li>
 							<a
 								href="https://github.com/rmc8/shelfsky"
@@ -101,7 +123,21 @@
 		<div
 			class="flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-5 text-[11px] sm:flex-row"
 		>
-			<p>© {new Date().getFullYear()} Blueshelf.</p>
+			<p>
+				© {new Date().getFullYear()} Blueshelf. Created by
+				<a
+					href="https://rmc-8.com"
+					target="_blank"
+					rel="noreferrer"
+					class="font-medium text-foreground hover:underline">rmc-8.com</a
+				>
+				(<a
+					href="https://bsky.app/profile/k.rmc-8.com"
+					target="_blank"
+					rel="noreferrer"
+					class="text-primary hover:underline">@k.rmc-8.com</a
+				>)
+			</p>
 			<div class="flex items-center gap-1 text-muted-foreground/80">
 				<span>Powered by</span>
 				<span class="font-medium text-foreground">AT Protocol</span>
