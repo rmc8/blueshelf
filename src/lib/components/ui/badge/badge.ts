@@ -12,7 +12,8 @@ export const badgeVariants = cva(
 				finished: 'border-transparent bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
 				reading: 'border-transparent bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30',
 				want: 'border-transparent bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30',
-				backlog: 'border-transparent bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+				backlog: 'border-transparent bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30',
+				dropped: 'border-transparent bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-500/30'
 			}
 		},
 		defaultVariants: {

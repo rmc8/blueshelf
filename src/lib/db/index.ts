@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import type { BookRef, ReadingStatusRecord, ReviewRecord } from '$lib/types/book';
 
 export interface CachedBook {

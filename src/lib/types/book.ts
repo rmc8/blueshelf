@@ -1,4 +1,5 @@
 export type ReadingStatusType = 'want' | 'reading' | 'finished' | 'backlog' | 'dropped';
+export type ReadingStatus = ReadingStatusType;
 
 export interface BookRef {
 	isbn13?: string;
