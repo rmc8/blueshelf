@@ -139,7 +139,7 @@
 
 		<!-- Modal Content Box -->
 		<div
-			class="border-border bg-background relative z-10 max-h-[90vh] w-full max-w-lg space-y-6 overflow-y-auto rounded-t-2xl border p-5 shadow-2xl sm:rounded-2xl sm:p-6"
+			class="border-border bg-card relative z-10 max-h-[90vh] w-full max-w-lg space-y-6 overflow-y-auto rounded-t-2xl border p-5 shadow-2xl sm:rounded-2xl sm:p-6"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-book-title"

@@ -127,8 +127,8 @@
 		</p>
 
 		<!-- Search Input Box -->
-		<div class="relative flex items-center shadow-sm">
-			<div class="text-muted-foreground pointer-events-none absolute left-3.5 flex items-center">
+		<div class="relative flex items-center shadow-xs">
+			<div class="text-muted-foreground pointer-events-none absolute left-3.5 z-10 flex items-center">
 				<Search class="h-4 w-4" />
 			</div>
 
@@ -137,7 +137,7 @@
 				placeholder={m.search_placeholder()}
 				bind:value={searchQuery}
 				oninput={onQueryChange}
-				class="border-border/60 bg-card/60 focus-visible:ring-primary h-11 rounded-xl pr-10 pl-10 text-sm backdrop-blur-sm"
+				class="border-border/80 bg-card text-foreground focus-visible:ring-primary h-11 rounded-xl pr-10 pl-10 text-sm shadow-xs"
 				autofocus
 			/>
 

@@ -32,10 +32,10 @@ export class BlueshelfDatabase extends Dexie {
 
 	constructor() {
 		super('blueshelf_db');
-		this.version(1).stores({
+		this.version(2).stores({
 			books: 'id, isbn13, title, *authors, cachedAt',
-			readingStatuses: 'uri, status, [book.isbn13+status], createdAt, updatedAt',
-			reviews: 'uri, [book.isbn13], rating, createdAt',
+			readingStatuses: 'uri, status, createdAt, updatedAt',
+			reviews: 'uri, rating, createdAt',
 			offlineQueue: '++id, type, collection, createdAt, synced'
 		});
 	}
