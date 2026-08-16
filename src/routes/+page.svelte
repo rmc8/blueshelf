@@ -13,14 +13,14 @@
 <div class="container mx-auto max-w-6xl px-4 py-8 sm:py-12">
 	<!-- Hero Section -->
 	<section class="flex flex-col items-center justify-center text-center space-y-6 py-6 sm:py-12">
-		<div class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary backdrop-blur-sm">
+		<div class="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-3.5 py-1.5 text-xs font-semibold text-sky-600 dark:text-sky-400">
 			<Sparkles class="h-3.5 w-3.5" />
-			<span>Own Your Bookshelf on the Atmosphere</span>
+			<span>Own Your Bookshelf on AT Protocol</span>
 		</div>
 
 		<h1 class="max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
 			AT Protocol 上に、<br class="hidden sm:inline" />
-			<span class="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-400 bg-clip-text text-transparent">
+			<span class="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
 				あなただけの本棚
 			</span>
 			を。
