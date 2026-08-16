@@ -65,28 +65,45 @@ async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
 }
 
 /**
- * キーワードによるハイブリッド検索（Google Books -> NDL 国立国会図書館サーチ -> Open Library -> openBD 書影補完）
+ * キーワードによるハイブリッド検索
+ * - 日本語クエリ: NDL (国立国会図書館サーチ + openBD) を第1優先（Google Books 429 回避・和書100%網羅）
+ * - 洋書/英数字クエリ: Google Books -> Open Library -> NDL
  */
 async function fetchByKeyword(query: string, maxResults: number): Promise<BookRef[]> {
-	// 1. Google Books API を試行
+	const containsJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u.test(query);
+
+	if (containsJapanese) {
+		// 1. 和書は NDL 国立国会図書館サーチ + openBD を最優先実行
+		const ndlBooks = await fetchNdlSearch(query, maxResults);
+		if (ndlBooks.length > 0) {
+			return ndlBooks;
+		}
+
+		// 2. NDL で見つからない場合、Google Books API をフォールバック試行
+		const gbooks = await fetchGoogleBooks(query, maxResults);
+		if (gbooks.length > 0) {
+			return gbooks;
+		}
+
+		// 3. Open Library フォールバック
+		return fetchOpenLibrary(query, maxResults);
+	}
+
+	// 洋書・英数字クエリの場合
+	// 1. Google Books API
 	const gbooks = await fetchGoogleBooks(query, maxResults);
 	if (gbooks.length > 0) {
 		return gbooks;
 	}
 
-	// 2. Google Books 制限(429) / ヒットなし時、NDL (国立国会図書館サーチ OpenSearch) + openBD 書影補完を実行
+	// 2. NDL (国立国会図書館サーチ)
 	const ndlBooks = await fetchNdlSearch(query, maxResults);
 	if (ndlBooks.length > 0) {
 		return ndlBooks;
 	}
 
-	// 3. Open Library API (洋書・グローバル書誌) をフォールバック実行
-	const olBooks = await fetchOpenLibrary(query, maxResults);
-	if (olBooks.length > 0) {
-		return olBooks;
-	}
-
-	return [];
+	// 3. Open Library
+	return fetchOpenLibrary(query, maxResults);
 }
 
 /**
