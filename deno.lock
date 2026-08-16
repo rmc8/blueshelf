@@ -8,6 +8,7 @@
     "npm:@inlang/paraglide-js@^2.18.2": "2.24.0_typescript@6.0.3_vite@8.2.1__@types+node@26.2.0_@types+node@26.2.0",
     "npm:@lucide/svelte@^1.31.0": "1.31.0_svelte@5.56.9",
     "npm:@sveltejs/adapter-static@^3.0.10": "3.0.10_@sveltejs+kit@2.70.2__@sveltejs+vite-plugin-svelte@7.3.0___svelte@5.56.9___vite@8.2.1____@types+node@26.2.0___@types+node@26.2.0__svelte@5.56.9__typescript@6.0.3__vite@8.2.1___@types+node@26.2.0__@types+node@26.2.0_@sveltejs+vite-plugin-svelte@7.3.0__svelte@5.56.9__vite@8.2.1___@types+node@26.2.0__@types+node@26.2.0_@types+node@26.2.0_svelte@5.56.9_typescript@6.0.3_vite@8.2.1__@types+node@26.2.0",
+    "npm:@sveltejs/kit@*": "2.70.2_@sveltejs+vite-plugin-svelte@7.3.0__svelte@5.56.9__vite@8.2.1___@types+node@26.2.0__@types+node@26.2.0_svelte@5.56.9_typescript@6.0.3_vite@8.2.1__@types+node@26.2.0_@types+node@26.2.0",
     "npm:@sveltejs/kit@^2.63.0": "2.70.2_@sveltejs+vite-plugin-svelte@7.3.0__svelte@5.56.9__vite@8.2.1___@types+node@26.2.0__@types+node@26.2.0_svelte@5.56.9_typescript@6.0.3_vite@8.2.1__@types+node@26.2.0_@types+node@26.2.0",
     "npm:@sveltejs/vite-plugin-svelte@^7.1.2": "7.3.0_svelte@5.56.9_vite@8.2.1__@types+node@26.2.0_@types+node@26.2.0",
     "npm:@tailwindcss/vite@^4.3.0": "4.3.3_vite@8.2.1__@types+node@26.2.0_@types+node@26.2.0",
