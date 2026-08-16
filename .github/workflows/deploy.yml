@@ -1,0 +1,38 @@
+name: Deploy to Deno Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write # Deno Deploy 認証用 (OIDC)
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install Dependencies
+        run: deno install
+
+      - name: Build Application (SPA + PWA)
+        run: deno task build
+
+      - name: Deploy to Deno Deploy
+        uses: denoland/deployctl@v1
+        with:
+          project: 'blueshelf'
+          entrypoint: 'server.ts'
+          root: '.'

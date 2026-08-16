@@ -1,0 +1,39 @@
+name: CI (Lint, Typecheck, Test, Build)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Code Quality & Test Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install Dependencies
+        run: deno install
+
+      - name: Check Formatting & Lint
+        run: deno task lint
+
+      - name: TypeScript & Svelte Check
+        run: deno task check
+
+      - name: Run Unit Tests (TDD)
+        run: deno task test
+
+      - name: Production Build & PWA Check
+        run: deno task build
