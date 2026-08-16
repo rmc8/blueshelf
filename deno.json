@@ -2,7 +2,7 @@
 	"nodeModulesDir": "auto",
 	"tasks": {
 		"dev": "deno run -A --node-modules-dir npm:vite dev --host",
-		"build": "deno run -A --node-modules-dir npm:vite build",
+		"build": "deno run -A --node-modules-dir npm:vite build && deno eval \"Deno.copyFileSync('build/404.html', 'build/index.html')\"",
 		"preview": "deno run -A --node-modules-dir npm:vite preview",
 		"compile": "deno run -A --node-modules-dir npm:@inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
 		"sync": "deno task compile && deno run -A --node-modules-dir npm:@sveltejs/kit sync",
