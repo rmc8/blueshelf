@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
-	import * as m from '$lib/paraglide/messages';
+	import * as m from '$lib/paraglide/messages.js';
+	import { languageTag } from '$lib/paraglide/runtime.js';
 	import { searchBooks } from '$lib/services/bookSearch';
 	import { getAllReadingRecords } from '$lib/services/bookRecord';
 	import type { BookRef, ReadingStatusType } from '$lib/types/book';
@@ -22,14 +23,31 @@
 
 	const statusMap = new SvelteMap<string, ReadingStatusType>();
 
-	const popularSuggestions = [
-		'SvelteKit',
-		'Deno',
+	const jaSuggestions = [
+		'村上春樹',
+		'東野圭吾',
+		'伊坂幸太郎',
+		'宮部みゆき',
+		'三島由紀夫',
+		'プロジェクト・ヘイル・メアリー',
 		'TypeScript',
-		'AT Protocol',
-		'Haruki Murakami',
-		'Sci-Fi'
+		'Svelte'
 	];
+
+	const enSuggestions = [
+		'Andy Weir',
+		'Haruki Murakami',
+		'Ted Chiang',
+		'George Orwell',
+		'Stephen King',
+		'Brandon Sanderson',
+		'TypeScript',
+		'AT Protocol'
+	];
+
+	const popularSuggestions = $derived.by(() => {
+		return languageTag() === 'ja' ? jaSuggestions : enSuggestions;
+	});
 
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
