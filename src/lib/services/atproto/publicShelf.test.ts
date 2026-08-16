@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseActorHandle, buildShareText } from './publicShelf';
+import { parseActorHandle, buildShareText } from '$lib/services/atproto/publicShelf';
 
 describe('Public Shelf & Social Sharing (TDD)', () => {
 	it('normalizes actor handle string properly', () => {

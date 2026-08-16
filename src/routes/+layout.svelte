@@ -6,6 +6,7 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from 'svelte-sonner';
 	import Header from '$lib/components/layout/Header.svelte';
+	import Footer from '$lib/components/layout/Footer.svelte';
 	import BottomNav from '$lib/components/layout/BottomNav.svelte';
 	import './layout.css';
 
@@ -20,12 +21,13 @@
 <Toaster position="bottom-right" richColors />
 
 <div
-	class="relative flex min-h-screen flex-col bg-background pb-20 text-foreground selection:bg-primary/20 selection:text-primary md:pb-0"
+	class="relative flex min-h-screen flex-col bg-background text-foreground selection:bg-primary/20 selection:text-primary"
 >
 	<Header />
 	<main class="flex-1">
 		{@render children()}
 	</main>
+	<Footer />
 	<BottomNav />
 </div>
 
