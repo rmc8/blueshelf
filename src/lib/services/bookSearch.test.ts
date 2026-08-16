@@ -55,6 +55,23 @@ describe('BookSearch Service (TDD)', () => {
 					})
 				} as Response;
 			}
+			if (url.includes('ndlsearch.ndl.go.jp')) {
+				return {
+					ok: true,
+					text: async () => `
+						<rss>
+							<channel>
+								<item>
+									<title>実践Svelte入門</title>
+									<author>Kyohei Hamaguchi</author>
+									<dc:publisher>技術評論社</dc:publisher>
+									<dc:identifier xsi:type="dcndl:ISBN">978-4-297-13495-2</dc:identifier>
+								</item>
+							</channel>
+						</rss>
+					`
+				} as Response;
+			}
 			return {
 				ok: false,
 				status: 404,
@@ -90,5 +107,59 @@ describe('BookSearch Service (TDD)', () => {
 		const book = results[0];
 		assert.equal(book.isbn13, '9784297126353');
 		assert.equal(book.title, 'SvelteKit Guide');
+	});
+
+	it('falls back to NDL and openBD when Google Books API fails or returns 429', async () => {
+		// Mock Google Books failure
+		globalThis.fetch = async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.includes('googleapis.com')) {
+				return {
+					ok: false,
+					status: 429,
+					json: async () => ({ error: { code: 429, message: 'Quota exceeded' } })
+				} as Response;
+			}
+			if (url.includes('ndlsearch.ndl.go.jp')) {
+				return {
+					ok: true,
+					text: async () => `
+						<rss>
+							<channel>
+								<item>
+									<title>実践Svelte入門</title>
+									<author>Kyohei Hamaguchi</author>
+									<dc:publisher>技術評論社</dc:publisher>
+									<dc:identifier xsi:type="dcndl:ISBN">978-4-297-13495-2</dc:identifier>
+								</item>
+							</channel>
+						</rss>
+					`
+				} as Response;
+			}
+			if (url.includes('openbd.jp')) {
+				return {
+					ok: true,
+					json: async () => [
+						{
+							summary: {
+								isbn: '9784297134952',
+								title: '実践Svelte入門',
+								author: 'Kyohei Hamaguchi',
+								publisher: '技術評論社',
+								cover: 'https://cover.openbd.jp/9784297134952.jpg'
+							}
+						}
+					]
+				} as Response;
+			}
+			return { ok: false, status: 404 } as Response;
+		};
+
+		const results = await searchBooks('Svelte', 5);
+		assert.ok(results.length > 0);
+		assert.equal(results[0].title, '実践Svelte入門');
+		assert.equal(results[0].isbn13, '9784297134952');
+		assert.equal(results[0].coverUrl, 'https://cover.openbd.jp/9784297134952.jpg');
 	});
 });
