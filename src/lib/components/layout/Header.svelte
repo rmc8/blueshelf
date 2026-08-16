@@ -95,25 +95,36 @@
 					</button>
 
 					{#if isUserMenuOpen}
+						<!-- Invisible backdrop to close menu on click outside -->
+						<button
+							type="button"
+							class="fixed inset-0 z-40 cursor-default"
+							onclick={() => (isUserMenuOpen = false)}
+							aria-label="Close user menu"
+							tabindex="-1"
+						></button>
+
 						<div
-							class="absolute top-10 right-0 z-50 w-48 rounded-xl border border-border bg-card p-1.5 shadow-lg"
+							class="absolute top-10 right-0 z-50 w-52 rounded-xl border border-border/80 bg-card p-1.5 shadow-xl"
 						>
-							<div class="border-b border-border/50 px-2.5 py-2">
+							<div class="border-b border-border/50 px-3 py-2.5">
 								<p class="truncate text-xs font-bold text-foreground">
 									{authState.user.displayName || authState.user.handle}
 								</p>
-								<p class="truncate text-[10px] text-muted-foreground">
+								<p class="truncate pt-0.5 text-[10px] text-muted-foreground">
 									@{authState.user.handle}
 								</p>
 							</div>
-							<button
-								type="button"
-								onclick={handleLogout}
-								class="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10"
-							>
-								<LogOut class="h-3.5 w-3.5" />
-								<span>{m.logout()}</span>
-							</button>
+							<div class="p-1">
+								<button
+									type="button"
+									onclick={handleLogout}
+									class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10"
+								>
+									<LogOut class="h-3.5 w-3.5" />
+									<span>{m.logout()}</span>
+								</button>
+							</div>
 						</div>
 					{/if}
 				</div>
