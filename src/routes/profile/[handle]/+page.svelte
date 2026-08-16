@@ -30,7 +30,10 @@
 		Check,
 		ExternalLink,
 		BookMarked,
-		User
+		User,
+		UserX,
+		ArrowLeft,
+		Search
 	} from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 
@@ -151,7 +154,7 @@
 
 <svelte:head>
 	<title>
-		{profile ? `${profile.displayName || profile.handle} の本棚` : '公開本棚'} | {m.app_name()}
+		{profile ? `${profile.displayName || profile.handle} の本棚` : 'ユーザーが見つかりません'} | {m.app_name()}
 	</title>
 	{#if profile}
 		<meta
@@ -175,8 +178,42 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-6xl space-y-6 px-4 py-6 sm:py-8">
-	<!-- Profile Card Header -->
-	{#if profile}
+	{#if isLoading}
+		<!-- Loading State -->
+		<div class="flex h-64 flex-col items-center justify-center space-y-3">
+			<span class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
+			></span>
+			<p class="text-xs text-muted-foreground">本棚を読み込んでいます...</p>
+		</div>
+	{:else if !profile}
+		<!-- Not Found (404) State -->
+		<div class="flex flex-col items-center justify-center space-y-4 py-20 text-center">
+			<div
+				class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground"
+			>
+				<UserX class="h-8 w-8 text-destructive opacity-60" />
+			</div>
+			<div class="max-w-md space-y-1.5">
+				<h1 class="text-xl font-bold text-foreground">ユーザーが見つかりませんでした</h1>
+				<p class="text-xs leading-relaxed text-muted-foreground">
+					指定された Bluesky アカウント（<span class="font-mono text-foreground"
+						>@{handleParam}</span
+					>）は存在しないか、プロフィールの取得に失敗しました。
+				</p>
+			</div>
+			<div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+				<Button href="/" variant="outline" size="sm" class="gap-1.5 rounded-xl text-xs">
+					<ArrowLeft class="h-3.5 w-3.5" />
+					<span>トップへ戻る</span>
+				</Button>
+				<Button href="/search" size="sm" class="gap-1.5 rounded-xl text-xs shadow-xs">
+					<Search class="h-3.5 w-3.5" />
+					<span>本を探す</span>
+				</Button>
+			</div>
+		</div>
+	{:else}
+		<!-- Profile Card Header -->
 		<div
 			class="relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-5 shadow-sm sm:p-6"
 		>
@@ -250,117 +287,112 @@
 				</div>
 			</div>
 		</div>
-	{/if}
 
-	<!-- Controls: Tabs & View/Sort Switchers -->
-	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-		<!-- Status Tabs -->
-		<div class="no-scrollbar flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-			{#each tabs as tab (tab.id)}
-				{@const isSelected = activeTab === tab.id}
-				{@const count = counts[tab.id] || 0}
-				<button
-					type="button"
-					onclick={() => (activeTab = tab.id)}
-					class="flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all {isSelected
-						? 'border-primary bg-primary text-primary-foreground shadow-xs'
-						: 'border-border/60 bg-card/50 text-muted-foreground hover:bg-muted hover:text-foreground'}"
-				>
-					<span>{tab.label}</span>
-					<span
-						class="py-0.2 rounded-full px-1.5 text-[10px] {isSelected
-							? 'bg-primary-foreground/20 text-primary-foreground'
-							: 'bg-muted text-muted-foreground'}"
+		<!-- Controls: Tabs & View/Sort Switchers -->
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<!-- Status Tabs -->
+			<div class="no-scrollbar flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+				{#each tabs as tab (tab.id)}
+					{@const isSelected = activeTab === tab.id}
+					{@const count = counts[tab.id] || 0}
+					<button
+						type="button"
+						onclick={() => (activeTab = tab.id)}
+						class="flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all {isSelected
+							? 'border-primary bg-primary text-primary-foreground shadow-xs'
+							: 'border-border/60 bg-card/50 text-muted-foreground hover:bg-muted hover:text-foreground'}"
 					>
-						{count}
-					</span>
-				</button>
-			{/each}
+						<span>{tab.label}</span>
+						<span
+							class="py-0.2 rounded-full px-1.5 text-[10px] {isSelected
+								? 'bg-primary-foreground/20 text-primary-foreground'
+								: 'bg-muted text-muted-foreground'}"
+						>
+							{count}
+						</span>
+					</button>
+				{/each}
+			</div>
+
+			<!-- View Switcher & Sort Selector -->
+			<div class="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
+				<!-- Sort Dropdown/Select -->
+				<div
+					class="flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-2.5 py-1 text-xs text-muted-foreground"
+				>
+					<ArrowUpDown class="h-3.5 w-3.5" />
+					<select
+						bind:value={sortBy}
+						class="cursor-pointer bg-transparent text-xs text-foreground focus:outline-none"
+						aria-label="Sort options"
+					>
+						{#each sortOptions as opt (opt.id)}
+							<option value={opt.id} class="bg-background text-foreground">{opt.label}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- View Mode Toggle -->
+				<div class="flex items-center rounded-xl border border-border/60 bg-card/60 p-0.5">
+					<button
+						type="button"
+						onclick={() => (viewMode = 'grid')}
+						class="rounded-lg p-1.5 transition-colors {viewMode === 'grid'
+							? 'bg-primary text-primary-foreground shadow-xs'
+							: 'text-muted-foreground hover:text-foreground'}"
+						title={m.grid_view()}
+						aria-label="Grid view"
+					>
+						<LayoutGrid class="h-4 w-4" />
+					</button>
+					<button
+						type="button"
+						onclick={() => (viewMode = 'list')}
+						class="rounded-lg p-1.5 transition-colors {viewMode === 'list'
+							? 'bg-primary text-primary-foreground shadow-xs'
+							: 'text-muted-foreground hover:text-foreground'}"
+						title={m.list_view()}
+						aria-label="List view"
+					>
+						<List class="h-4 w-4" />
+					</button>
+				</div>
+			</div>
 		</div>
 
-		<!-- View Switcher & Sort Selector -->
-		<div class="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
-			<!-- Sort Dropdown/Select -->
-			<div
-				class="flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-2.5 py-1 text-xs text-muted-foreground"
-			>
-				<ArrowUpDown class="h-3.5 w-3.5" />
-				<select
-					bind:value={sortBy}
-					class="cursor-pointer bg-transparent text-xs text-foreground focus:outline-none"
-					aria-label="Sort options"
-				>
-					{#each sortOptions as opt (opt.id)}
-						<option value={opt.id} class="bg-background text-foreground">{opt.label}</option>
-					{/each}
-				</select>
-			</div>
-
-			<!-- View Mode Toggle -->
-			<div class="flex items-center rounded-xl border border-border/60 bg-card/60 p-0.5">
-				<button
-					type="button"
-					onclick={() => (viewMode = 'grid')}
-					class="rounded-lg p-1.5 transition-colors {viewMode === 'grid'
-						? 'bg-primary text-primary-foreground shadow-xs'
-						: 'text-muted-foreground hover:text-foreground'}"
-					title={m.grid_view()}
-					aria-label="Grid view"
-				>
-					<LayoutGrid class="h-4 w-4" />
-				</button>
-				<button
-					type="button"
-					onclick={() => (viewMode = 'list')}
-					class="rounded-lg p-1.5 transition-colors {viewMode === 'list'
-						? 'bg-primary text-primary-foreground shadow-xs'
-						: 'text-muted-foreground hover:text-foreground'}"
-					title={m.list_view()}
-					aria-label="List view"
-				>
-					<List class="h-4 w-4" />
-				</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Shelf Content Area -->
-	<div class="pt-2">
-		{#if isLoading}
-			<div class="flex h-48 items-center justify-center">
-				<span class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"
-				></span>
-			</div>
-		{:else if filteredItems.length > 0}
-			{#if viewMode === 'grid'}
-				<BookGrid
-					books={filteredItems.map((item) => item.book)}
-					{statusMap}
-					onSelectBook={handleSelectBook}
-				/>
+		<!-- Shelf Content Area -->
+		<div class="pt-2">
+			{#if filteredItems.length > 0}
+				{#if viewMode === 'grid'}
+					<BookGrid
+						books={filteredItems.map((item) => item.book)}
+						{statusMap}
+						onSelectBook={handleSelectBook}
+					/>
+				{:else}
+					<div class="space-y-2.5">
+						{#each filteredItems as item (item.book.isbn13 || item.book.title)}
+							<ShelfListItem {item} onSelect={() => handleSelectBook(item.book)} />
+						{/each}
+					</div>
+				{/if}
 			{:else}
-				<div class="space-y-2.5">
-					{#each filteredItems as item (item.book.isbn13 || item.book.title)}
-						<ShelfListItem {item} onSelect={() => handleSelectBook(item.book)} />
-					{/each}
+				<!-- Empty State -->
+				<div class="flex flex-col items-center justify-center space-y-3 py-16 text-center">
+					<div
+						class="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground"
+					>
+						<BookMarked class="h-6 w-6 opacity-50" />
+					</div>
+					<h2 class="text-base font-bold text-foreground">
+						{activeTab === 'all'
+							? '本棚にまだ本が登録されていません'
+							: `「${tabs.find((t) => t.id === activeTab)?.label}」の本はありません`}
+					</h2>
 				</div>
 			{/if}
-		{:else}
-			<!-- Empty State -->
-			<div class="flex flex-col items-center justify-center space-y-3 py-16 text-center">
-				<div
-					class="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground"
-				>
-					<BookMarked class="h-6 w-6 opacity-50" />
-				</div>
-				<h2 class="text-base font-bold text-foreground">
-					{activeTab === 'all'
-						? '本棚にまだ本が登録されていません'
-						: `「${tabs.find((t) => t.id === activeTab)?.label}」の本はありません`}
-				</h2>
-			</div>
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>
 
 <!-- Book Detail Modal -->
