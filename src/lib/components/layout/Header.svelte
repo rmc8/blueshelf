@@ -10,9 +10,9 @@
 	<div class="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
 		<!-- Brand Logo & Title -->
 		<div class="flex items-center gap-6">
-			<a href="/" class="flex items-center gap-2.5 transition-opacity hover:opacity-90">
+			<a href="/" class="flex items-center gap-2.5 shrink-0 transition-opacity hover:opacity-90">
 				<img src="/img/logo/shelfsky.svg" alt="Blueshelf Logo" class="h-8 w-8 rounded-lg object-contain shadow-sm" />
-				<span class="font-bold tracking-tight text-base sm:text-lg bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+				<span class="font-bold tracking-tight text-base sm:text-lg text-foreground">
 					{m.app_name()}
 				</span>
 			</a>
