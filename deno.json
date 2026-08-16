@@ -13,7 +13,8 @@
 	},
 	"imports": {
 		"$lib/": "./src/lib/",
-		"$lib": "./src/lib/index.ts"
+		"$lib": "./src/lib/index.ts",
+		"@std/http/file-server": "jsr:@std/http@^1.0.0/file-server"
 	},
 	"compilerOptions": {
 		"lib": ["dom", "dom.iterable", "esnext", "deno.ns"]

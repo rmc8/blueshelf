@@ -1,9 +1,14 @@
-import { serveDir } from 'jsr:@std/http@^1.0.0/file-server';
+import { serveDir } from '@std/http/file-server';
+
+declare const Deno: {
+	serve: (handler: (req: Request) => Promise<Response> | Response) => void;
+	readTextFile: (path: string) => Promise<string>;
+};
 
 /**
  * Deno Deploy 用の静的 SPA サーバー & OAuth メタデータ動的解決
  */
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request): Promise<Response> => {
 	const url = new URL(req.url);
 
 	// ATProto OAuth client-metadata.json の動的配信

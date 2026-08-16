@@ -4254,6 +4254,9 @@
     }
   },
   "workspace": {
+    "dependencies": [
+      "jsr:@std/http@1"
+    ],
     "packageJson": {
       "dependencies": [
         "npm:@atproto/api@~0.20.41",
