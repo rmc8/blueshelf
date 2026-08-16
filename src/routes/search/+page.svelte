@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
 	import * as m from '$lib/paraglide/messages.js';
-	import { languageTag } from '$lib/paraglide/runtime.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { searchBooks } from '$lib/services/bookSearch';
 	import { getAllReadingRecords } from '$lib/services/bookRecord';
 	import type { BookRef, ReadingStatusType } from '$lib/types/book';
@@ -46,7 +46,7 @@
 	];
 
 	const popularSuggestions = $derived.by(() => {
-		return languageTag() === 'ja' ? jaSuggestions : enSuggestions;
+		return getLocale() === 'ja' ? jaSuggestions : enSuggestions;
 	});
 
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
