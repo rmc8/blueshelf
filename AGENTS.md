@@ -1,34 +1,23 @@
-# AGENTS.md - Blueshelf 開発ガイドライン & エージェント指示書
+# AGENTS.md - Blueshelf 開発ガイドライン & 設計ドキュメント
 
 **Blueshelf** は、AT Protocol（Blueskyエコシステム）上に構築された、分散型のソーシャル読書記録・本棚管理 Web / PWA アプリケーションです。
+ユーザー自身の PDS (Personal Data Server) に読書履歴や書評を永続保存（自己主権データ）しながら、Bluesky のソーシャルグラフやタイムラインと連動します。
 
 ---
 
-## 📚 関連ドキュメント・仕様書
-詳細な仕様書一式は仕様書リポジトリ（`blueshelf-doc`）を参照してください：
-- 要件定義・競合分析: `docs/00_concept/requirements.md`
-- 敵対的検証レポート: `docs/00_concept/adversarial_review.md`
-- システムアーキテクチャ: `docs/01_protocol_architecture/system_architecture.md`
-- ATProto Lexicon スキーマ: `docs/01_protocol_architecture/lexicon_data_model.md`
-- セキュリティ仕様 (OSS公開前提): `docs/01_protocol_architecture/security_spec.md`
-- UI/UX 仕様: `docs/02_frontend_ui/ui_ux_spec.md`
-- 多言語対応 (i18n) 仕様: `docs/02_frontend_ui/i18n_spec.md`
-- 書誌API仕様: `docs/03_external_services/book_metadata_api.md`
-- 開発ロードマップ: `docs/05_roadmap/roadmap.md`
-
----
-
-## 🛠️ 技術スタック & 実行コマンド
+## 🛠️ 技術スタック & 実行環境
 
 | レイヤー | 採用技術 |
 | :--- | :--- |
-| **Runtime & Toolchain** | **Deno (Deno 2)** — `deno.json` |
+| **Runtime & Toolchain** | **Deno (Deno 2)** (`deno.json`) |
+| **Hosting & Infra** | **Deno Deploy** (エッジ配信 / 完全無料 $0) |
 | **Frontend Framework** | **SvelteKit + Svelte 5 (Runes)** |
+| **Frontend Adapter** | **`@sveltejs/adapter-static`** (Clean URLs / 404.html SPA) |
 | **CSS & Styling** | **Tailwind CSS v4** + **shadcn-svelte (Bits UI 2.x)** |
-| **i18n (多言語対応)** | **Paraglide.js** (日本語 `ja` / 英語 `en`) |
-| **PWA & オフライン** | **`@vite-pwa/sveltekit`** (Workbox) |
-| **Client Storage** | **`dexie` (IndexedDB)** |
-| **ATProto** | **`@atproto/api`**, **`@atproto/oauth-client-browser`** |
+| **i18n (多言語対応)** | **Paraglide.js** (`messages/ja.json`, `messages/en.json`) |
+| **PWA & オフライン** | **`@vite-pwa/sveltekit`** (Workbox, Web App Manifest) |
+| **Client Storage** | **`dexie` (IndexedDB)** — キャッシュ & オフラインキュー |
+| **ATProto Integration** | **`@atproto/api`**, **`@atproto/oauth-client-browser`** |
 | **書籍メタデータ** | **Google Books API (Primary)** + **openBD (Secondary)** |
 
 ### 開発・検証コマンド（※ npm/pnpm ではなく deno を使用）
@@ -52,6 +41,30 @@ deno task lint
 
 ---
 
+## 🏛️ コアアーキテクチャ & データモデル
+
+### 1. AT Protocol カスタム Lexicon
+ユーザーの PDS に保存されるデータスキーマ：
+
+- **`app.blueshelf.readingStatus`**: 読書ステータス
+  - `status`: `"want"` (読みたい), `"reading"` (読んでる), `"finished"` (読了), `"backlog"` (積読), `"dropped"` (中断)
+  - `currentPage`: 読書進捗ページ数
+  - `book`: `bookRef` オブジェクト（ISBN, タイトル, 著者, 表紙URL等のスナップショット）
+- **`app.blueshelf.review`**: 書評・星評価
+  - `rating`: 1〜5段階の数値評価
+  - `content`: 感想本文（Markdownサニタイズ必須）
+  - `hasSpoiler`: ネタバレフラグ
+  - `bskyPostUri`: Bluesky同時投稿時の AT-URI
+- **`app.blueshelf.shelf`**: カスタム本棚コレクション定義
+
+### 2. 書籍検索 & キャッシュフロー
+1. ユーザーがタイトル / 著者 / ISBN で検索。
+2. **Google Books API** を Primary として全世界の書籍を検索。
+3. 和書の場合は **openBD API** を並列取得し、高品質書影（JPRO）で補完。
+4. 取得した書誌データは **`Dexie` (IndexedDB)** に 30 日間ローカルキャッシュ（0ms 即時表示）。
+
+---
+
 ## 📐 コーディング規約 & 設計ルール
 
 ### 1. Svelte 5 Runes を徹底
@@ -70,9 +83,9 @@ deno task lint
 - Lexicon 内の機械可読値（ステータス `want`, `reading`, `finished` 等）は英語キーのまま保持し、UI表示時に辞書で変換。
 
 ### 4. セキュリティ & OSS 公開規約 (Zero-Secret)
-- このリポジトリは最終的にオープンソースとして公開されます。**Client Secret や秘密鍵、機密トークンを絶対にコード内にコミットしないこと**。
+- このリポジトリはオープンソースとして公開されます。**Client Secret や秘密鍵、機密トークンを絶対にコード内にコミットしないこと**。
 - ユーザー入力の Markdown や書評テキストを描画する際は、必ず **`DOMPurify`**（`dompurify`）でサニタイズしてから表示すること。
 
 ### 5. データ永続化 & オフライン対応
 - 書籍メタデータや読書ステータスのキャッシュは `$lib/db/index.ts`（Dexie）を活用。
-- オフライン時の操作は `offlineQueue` テーブルにキューイングし、オンライン復帰時にPDSへ自動同期する設計を維持すること。
+- オフライン時の操作は `offlineQueue` テーブルにキューイングし、オンライン復帰時にPDSへ自動同期（Last-Write-Wins競合解決）する設計を維持すること。
