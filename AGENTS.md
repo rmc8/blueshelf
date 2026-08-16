@@ -5,7 +5,7 @@
 ---
 
 ## 📚 関連ドキュメント・仕様書
-詳細な仕様書一式は [`/Users/rmc8/Desktop/Dev/App/blueshelf-doc`](file:///Users/rmc8/Desktop/Dev/App/blueshelf-doc) にあります：
+詳細な仕様書一式は仕様書リポジトリ（`blueshelf-doc`）を参照してください：
 - 要件定義・競合分析: `docs/00_concept/requirements.md`
 - 敵対的検証レポート: `docs/00_concept/adversarial_review.md`
 - システムアーキテクチャ: `docs/01_protocol_architecture/system_architecture.md`
