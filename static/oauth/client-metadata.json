@@ -5,12 +5,7 @@
 	"logo_uri": "https://bs.rmc-8.com/img/logo/shelfsky.svg",
 	"tos_uri": "https://bs.rmc-8.com",
 	"policy_uri": "https://bs.rmc-8.com",
-	"redirect_uris": [
-		"https://bs.rmc-8.com/oauth/callback",
-		"http://127.0.0.1:5173/oauth/callback",
-		"http://127.0.0.1:4173/oauth/callback",
-		"http://127.0.0.1:4174/oauth/callback"
-	],
+	"redirect_uris": ["https://bs.rmc-8.com/oauth/callback"],
 	"grant_types": ["authorization_code", "refresh_token"],
 	"response_types": ["code"],
 	"scope": "atproto",

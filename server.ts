@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
 	const url = new URL(req.url);
 
 	// ATProto OAuth client-metadata.json の動的配信
-	// プレビュー URL (*.deno.net / *.deno.dev) や本番 (bs.rmc-8.com) の各オリジンに適合
+	// HTTPS Web App の redirect_uris は同一オリジンの HTTPS URI のみ許可される (RFC 8252 / ATProto OAuth)
 	if (url.pathname === '/oauth/client-metadata.json') {
 		const origin = url.origin;
 		const metadata = {
@@ -17,12 +17,7 @@ Deno.serve(async (req) => {
 			logo_uri: `${origin}/img/logo/shelfsky.svg`,
 			tos_uri: origin,
 			policy_uri: origin,
-			redirect_uris: [
-				`${origin}/oauth/callback`,
-				'http://127.0.0.1:5173/oauth/callback',
-				'http://127.0.0.1:4173/oauth/callback',
-				'http://127.0.0.1:4174/oauth/callback'
-			],
+			redirect_uris: [`${origin}/oauth/callback`],
 			grant_types: ['authorization_code', 'refresh_token'],
 			response_types: ['code'],
 			scope: 'atproto',
