@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import * as m from '$lib/paraglide/messages';
 	import { searchBooks } from '$lib/services/bookSearch';
-	import type { BookRef } from '$lib/types/book';
+	import type { BookRef, ReadingStatusType } from '$lib/types/book';
+	import { db } from '$lib/db';
 	import { Input } from '$lib/components/ui/input';
 	import BookGrid from '$lib/components/book/BookGrid.svelte';
 	import BookSkeleton from '$lib/components/book/BookSkeleton.svelte';
+	import BookRecordModal from '$lib/components/book/BookRecordModal.svelte';
 	import { Search, Sparkles, BookX, X } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 
@@ -14,6 +18,10 @@
 	let hasSearched = $state(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
+	let statusMap = new SvelteMap<string, ReadingStatusType>();
+	let selectedBookForModal = $state<BookRef | null>(null);
+	let isModalOpen = $state(false);
+
 	const popularSuggestions = [
 		'SvelteKit',
 		'TypeScript',
@@ -22,6 +30,26 @@
 		'SF小説',
 		'デザインシステム'
 	];
+
+	onMount(async () => {
+		await loadStatusMap();
+	});
+
+	async function loadStatusMap() {
+		if (typeof indexedDB === 'undefined') return;
+		try {
+			const statuses = await db.readingStatuses.toArray();
+			statusMap.clear();
+			for (const item of statuses) {
+				const key = item.book?.isbn13 || item.book?.title;
+				if (key) {
+					statusMap.set(key, item.status);
+				}
+			}
+		} catch {
+			// Ignore
+		}
+	}
 
 	function onQueryChange() {
 		clearTimeout(debounceTimer);
@@ -70,7 +98,17 @@
 	}
 
 	function handleSelectBook(book: BookRef) {
-		toast.info(`「${book.title}」を選択しました (記録モーダルはStep 3で実装)`);
+		selectedBookForModal = book;
+		isModalOpen = true;
+	}
+
+	function handleModalSaved(newStatus: ReadingStatusType) {
+		if (selectedBookForModal) {
+			const key = selectedBookForModal.isbn13 || selectedBookForModal.title;
+			if (key) {
+				statusMap.set(key, newStatus);
+			}
+		}
 	}
 </script>
 
@@ -142,7 +180,7 @@
 				<div class="text-muted-foreground flex items-center justify-between px-1 text-xs">
 					<span>検索結果: {searchResults.length} 件</span>
 				</div>
-				<BookGrid books={searchResults} onSelectBook={handleSelectBook} />
+				<BookGrid books={searchResults} {statusMap} onSelectBook={handleSelectBook} />
 			</div>
 		{:else if hasSearched}
 			<!-- Empty State -->
@@ -173,3 +211,11 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Book Record & Review Modal -->
+<BookRecordModal
+	book={selectedBookForModal}
+	isOpen={isModalOpen}
+	onClose={() => (isModalOpen = false)}
+	onSaved={handleModalSaved}
+/>
