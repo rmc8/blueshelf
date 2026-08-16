@@ -43,13 +43,13 @@
 			disabled={readonly}
 			onclick={() => handleClick(star)}
 			onmouseenter={() => handleMouseEnter(star)}
-			class="focus-visible:ring-primary rounded p-0.5 transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:outline-none disabled:cursor-default"
+			class="rounded p-0.5 transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-default"
 			aria-label="{star} stars"
 		>
 			<Star
 				class="h-6 w-6 transition-colors {isFilled
 					? 'fill-amber-400 text-amber-400 dark:fill-amber-400 dark:text-amber-400'
-					: 'text-muted-foreground/40 fill-transparent hover:text-amber-400/60'}"
+					: 'fill-transparent text-muted-foreground/40 hover:text-amber-400/60'}"
 			/>
 		</button>
 	{/each}

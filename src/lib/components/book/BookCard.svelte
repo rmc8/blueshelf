@@ -32,11 +32,11 @@
 </script>
 
 <Card
-	class="group border-border/60 bg-card/80 hover:border-primary/50 relative flex cursor-pointer flex-col overflow-hidden rounded-xl border transition-all hover:shadow-md"
+	class="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-border/60 bg-card/80 transition-all hover:border-primary/50 hover:shadow-md"
 	onclick={() => onSelect?.(book)}
 >
 	<!-- Cover Image (2:3 Aspect Ratio) -->
-	<div class="bg-muted/60 relative aspect-2/3 w-full overflow-hidden">
+	<div class="relative aspect-2/3 w-full overflow-hidden bg-muted/60">
 		{#if book.coverUrl}
 			<img
 				src={book.coverUrl}
@@ -46,7 +46,7 @@
 			/>
 		{:else}
 			<div
-				class="text-muted-foreground bg-muted/40 flex h-full w-full flex-col items-center justify-center p-4 text-center"
+				class="flex h-full w-full flex-col items-center justify-center bg-muted/40 p-4 text-center text-muted-foreground"
 			>
 				<Book class="mb-2 h-10 w-10 opacity-30" />
 				<span class="line-clamp-2 px-1 text-xs font-medium">{book.title}</span>
@@ -67,7 +67,7 @@
 			class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100"
 		>
 			<span
-				class="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold shadow-lg"
+				class="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-lg"
 			>
 				<Plus class="h-3.5 w-3.5" />
 				<span>{m.my_shelf()}</span>
@@ -78,18 +78,18 @@
 	<!-- Book Info -->
 	<CardContent class="flex flex-1 flex-col justify-between p-3">
 		<div class="space-y-1">
-			<h2 class="text-foreground line-clamp-2 text-sm leading-tight font-bold" title={book.title}>
+			<h2 class="line-clamp-2 text-sm leading-tight font-bold text-foreground" title={book.title}>
 				{book.title}
 			</h2>
 			{#if book.authors?.length}
-				<p class="text-muted-foreground line-clamp-1 text-xs">
+				<p class="line-clamp-1 text-xs text-muted-foreground">
 					{book.authors.join(', ')}
 				</p>
 			{/if}
 		</div>
 
 		<div
-			class="text-muted-foreground/80 border-border/40 mt-2 flex items-center justify-between border-t pt-1.5 text-[11px]"
+			class="mt-2 flex items-center justify-between border-t border-border/40 pt-1.5 text-[11px] text-muted-foreground/80"
 		>
 			{#if book.publisher}
 				<span class="max-w-30 truncate">{book.publisher}</span>

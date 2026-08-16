@@ -8,7 +8,7 @@
 	variant="ghost"
 	size="icon"
 	onclick={toggleMode}
-	class="text-muted-foreground hover:text-foreground h-9 w-9"
+	class="h-9 w-9 text-muted-foreground hover:text-foreground"
 	title="Toggle Dark/Light Mode"
 >
 	<Sun class="h-4 w-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />

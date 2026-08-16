@@ -97,16 +97,16 @@
 <div class="container mx-auto max-w-6xl space-y-6 px-4 py-6 sm:py-8">
 	<!-- Shelf Header -->
 	<div
-		class="border-border/40 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-center sm:justify-between"
+		class="flex flex-col gap-4 border-b border-border/40 pb-5 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div>
 			<h1
-				class="text-foreground flex items-center gap-2.5 text-2xl font-extrabold tracking-tight sm:text-3xl"
+				class="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl"
 			>
-				<Library class="text-primary h-7 w-7" />
+				<Library class="h-7 w-7 text-primary" />
 				<span>{m.my_shelf()}</span>
 			</h1>
-			<p class="text-muted-foreground pt-1 text-xs sm:text-sm">
+			<p class="pt-1 text-xs text-muted-foreground sm:text-sm">
 				登録した本（{rawItems.length} 冊）のステータス管理・書評・読書進捗を一覧表示します。
 			</p>
 		</div>
@@ -151,12 +151,12 @@
 		<div class="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
 			<!-- Sort Dropdown/Select -->
 			<div
-				class="border-border/60 bg-card/60 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs"
+				class="flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-2.5 py-1 text-xs text-muted-foreground"
 			>
 				<ArrowUpDown class="h-3.5 w-3.5" />
 				<select
 					bind:value={sortBy}
-					class="text-foreground cursor-pointer bg-transparent text-xs focus:outline-none"
+					class="cursor-pointer bg-transparent text-xs text-foreground focus:outline-none"
 					aria-label="Sort options"
 				>
 					{#each sortOptions as opt (opt.id)}
@@ -166,7 +166,7 @@
 			</div>
 
 			<!-- View Mode Toggle -->
-			<div class="border-border/60 bg-card/60 flex items-center rounded-xl border p-0.5">
+			<div class="flex items-center rounded-xl border border-border/60 bg-card/60 p-0.5">
 				<button
 					type="button"
 					onclick={() => (viewMode = 'grid')}
@@ -197,7 +197,7 @@
 	<div class="pt-2">
 		{#if isLoading}
 			<div class="flex h-48 items-center justify-center">
-				<span class="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
+				<span class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"
 				></span>
 			</div>
 		{:else if filteredItems.length > 0}
@@ -218,17 +218,17 @@
 			<!-- Empty State -->
 			<div class="flex flex-col items-center justify-center space-y-4 py-20 text-center">
 				<div
-					class="bg-muted/60 text-muted-foreground flex h-14 w-14 items-center justify-center rounded-2xl"
+					class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground"
 				>
 					<BookMarked class="h-7 w-7 opacity-50" />
 				</div>
 				<div class="space-y-1">
-					<h2 class="text-foreground text-base font-bold">
+					<h2 class="text-base font-bold text-foreground">
 						{activeTab === 'all'
 							? '本棚にまだ本がありません'
 							: `「${tabs.find((t) => t.id === activeTab)?.label}」の本はありません`}
 					</h2>
-					<p class="text-muted-foreground max-w-sm text-xs">
+					<p class="max-w-sm text-xs text-muted-foreground">
 						読みたい本や読んだ本を検索して、マイ本棚に追加してみましょう。
 					</p>
 				</div>

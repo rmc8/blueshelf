@@ -35,7 +35,7 @@
 </script>
 
 <div
-	class="group border-border/60 bg-card/70 hover:border-primary/50 flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3.5 transition-all hover:shadow-md"
+	class="group flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border/60 bg-card/70 p-3.5 transition-all hover:border-primary/50 hover:shadow-md"
 	onclick={() => onSelect?.(item)}
 	role="button"
 	tabindex="0"
@@ -44,12 +44,12 @@
 	<div class="flex min-w-0 flex-1 items-center gap-3.5">
 		<!-- Cover -->
 		<div
-			class="bg-muted/60 border-border/40 relative aspect-2/3 w-14 shrink-0 overflow-hidden rounded-lg border shadow-xs"
+			class="relative aspect-2/3 w-14 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted/60 shadow-xs"
 		>
 			{#if book.coverUrl}
 				<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
 			{:else}
-				<div class="text-muted-foreground flex h-full w-full items-center justify-center">
+				<div class="flex h-full w-full items-center justify-center text-muted-foreground">
 					<Book class="h-5 w-5 opacity-30" />
 				</div>
 			{/if}
@@ -69,12 +69,12 @@
 			</div>
 
 			<h3
-				class="text-foreground group-hover:text-primary line-clamp-1 text-sm leading-snug font-bold transition-colors"
+				class="line-clamp-1 text-sm leading-snug font-bold text-foreground transition-colors group-hover:text-primary"
 			>
 				{book.title}
 			</h3>
 
-			<div class="text-muted-foreground flex items-center gap-2 text-xs">
+			<div class="flex items-center gap-2 text-xs text-muted-foreground">
 				{#if book.authors?.length}
 					<span class="max-w-40 truncate">{book.authors.join(', ')}</span>
 				{/if}
@@ -86,14 +86,14 @@
 			<!-- Reading Progress (If Reading) -->
 			{#if status === 'reading' && item.statusRecord.currentPage}
 				<div class="max-w-xs pt-1">
-					<div class="text-muted-foreground flex justify-between pb-0.5 text-[10px]">
+					<div class="flex justify-between pb-0.5 text-[10px] text-muted-foreground">
 						<span>進捗</span>
 						<span class="font-medium"
 							>{item.statusRecord.currentPage} / {book.pageCount || '?'} p</span
 						>
 					</div>
 					{#if book.pageCount}
-						<div class="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+						<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
 							<div
 								class="h-full rounded-full bg-blue-600"
 								style="width: {Math.min(
@@ -108,7 +108,7 @@
 
 			<!-- Review Note snippet -->
 			{#if review?.content}
-				<p class="text-muted-foreground/80 line-clamp-1 pt-0.5 text-xs italic">
+				<p class="line-clamp-1 pt-0.5 text-xs text-muted-foreground/80 italic">
 					"{review.content}"
 				</p>
 			{/if}
@@ -116,6 +116,6 @@
 	</div>
 
 	<ChevronRight
-		class="text-muted-foreground/40 group-hover:text-foreground h-5 w-5 shrink-0 transition-transform group-hover:translate-x-0.5"
+		class="h-5 w-5 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
 	/>
 </div>

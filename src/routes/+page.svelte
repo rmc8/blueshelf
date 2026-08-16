@@ -29,14 +29,14 @@
 			を。
 		</h1>
 
-		<p class="text-muted-foreground max-w-2xl text-sm leading-relaxed sm:text-base">
+		<p class="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
 			読書ログ・書評・積読データを自分の PDS に永続保存。<br class="hidden sm:inline" />
 			広告レスで美しい、新世代の分散型ソーシャル本棚アプリケーション。
 		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3 pt-2">
 			<a href="/search">
-				<Button size="lg" class="shadow-primary/20 gap-2 font-medium shadow-md">
+				<Button size="lg" class="gap-2 font-medium shadow-md shadow-primary/20">
 					<Search class="h-4 w-4" />
 					<span>{m.search()}</span>
 				</Button>
@@ -53,7 +53,7 @@
 	<!-- Feature Highlights -->
 	<section class="grid grid-cols-1 gap-4 pt-8 sm:grid-cols-3 sm:pt-12">
 		<Card
-			class="border-border/60 bg-card/60 hover:border-primary/40 backdrop-blur-sm transition-colors"
+			class="border-border/60 bg-card/60 backdrop-blur-sm transition-colors hover:border-primary/40"
 		>
 			<CardHeader class="pb-2">
 				<div
@@ -69,7 +69,7 @@
 		</Card>
 
 		<Card
-			class="border-border/60 bg-card/60 hover:border-primary/40 backdrop-blur-sm transition-colors"
+			class="border-border/60 bg-card/60 backdrop-blur-sm transition-colors hover:border-primary/40"
 		>
 			<CardHeader class="pb-2">
 				<div
@@ -84,7 +84,7 @@
 		</Card>
 
 		<Card
-			class="border-border/60 bg-card/60 hover:border-primary/40 backdrop-blur-sm transition-colors"
+			class="border-border/60 bg-card/60 backdrop-blur-sm transition-colors hover:border-primary/40"
 		>
 			<CardHeader class="pb-2">
 				<div

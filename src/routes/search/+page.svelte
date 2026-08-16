@@ -119,16 +119,18 @@
 <div class="container mx-auto max-w-6xl space-y-6 px-4 py-6 sm:py-8">
 	<!-- Search Header & Input Bar -->
 	<div class="mx-auto max-w-2xl space-y-4 text-center">
-		<h1 class="text-foreground text-2xl font-extrabold tracking-tight sm:text-3xl">
+		<h1 class="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
 			{m.search()}
 		</h1>
-		<p class="text-muted-foreground text-xs sm:text-sm">
+		<p class="text-xs text-muted-foreground sm:text-sm">
 			Google Books と openBD を横断し、和書・洋書の書誌・書影を高精度に検索します。
 		</p>
 
 		<!-- Search Input Box -->
 		<div class="relative flex items-center shadow-xs">
-			<div class="text-muted-foreground pointer-events-none absolute left-3.5 z-10 flex items-center">
+			<div
+				class="pointer-events-none absolute left-3.5 z-10 flex items-center text-muted-foreground"
+			>
 				<Search class="h-4 w-4" />
 			</div>
 
@@ -137,7 +139,7 @@
 				placeholder={m.search_placeholder()}
 				bind:value={searchQuery}
 				oninput={onQueryChange}
-				class="border-border/80 bg-card text-foreground focus-visible:ring-primary h-11 rounded-xl pr-10 pl-10 text-sm shadow-xs"
+				class="h-11 rounded-xl border-border/80 bg-card pr-10 pl-10 text-sm text-foreground shadow-xs focus-visible:ring-primary"
 				autofocus
 			/>
 
@@ -145,7 +147,7 @@
 				<button
 					type="button"
 					onclick={clearSearch}
-					class="text-muted-foreground hover:text-foreground hover:bg-muted/80 absolute right-3.5 rounded-full p-1 transition-colors"
+					class="absolute right-3.5 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
 					aria-label="Clear search"
 				>
 					<X class="h-3.5 w-3.5" />
@@ -155,7 +157,7 @@
 
 		<!-- Popular Search Suggestions -->
 		<div class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-			<span class="text-muted-foreground mr-1 flex items-center gap-1 text-xs">
+			<span class="mr-1 flex items-center gap-1 text-xs text-muted-foreground">
 				<Sparkles class="h-3 w-3 text-sky-500" />
 				おすすめ:
 			</span>
@@ -163,7 +165,7 @@
 				<button
 					type="button"
 					onclick={() => handleSuggestionClick(suggestion)}
-					class="border-border/60 bg-muted/40 text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary rounded-full border px-2.5 py-0.5 text-xs transition-colors"
+					class="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
 				>
 					{suggestion}
 				</button>
@@ -177,7 +179,7 @@
 			<BookSkeleton count={10} />
 		{:else if searchResults.length > 0}
 			<div class="space-y-4">
-				<div class="text-muted-foreground flex items-center justify-between px-1 text-xs">
+				<div class="flex items-center justify-between px-1 text-xs text-muted-foreground">
 					<span>検索結果: {searchResults.length} 件</span>
 				</div>
 				<BookGrid books={searchResults} {statusMap} onSelectBook={handleSelectBook} />
@@ -186,12 +188,12 @@
 			<!-- Empty State -->
 			<div class="flex flex-col items-center justify-center space-y-3 py-16 text-center">
 				<div
-					class="bg-muted/60 text-muted-foreground flex h-12 w-12 items-center justify-center rounded-2xl"
+					class="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground"
 				>
 					<BookX class="h-6 w-6 opacity-60" />
 				</div>
-				<h2 class="text-foreground text-base font-bold">該当する本が見つかりませんでした</h2>
-				<p class="text-muted-foreground max-w-sm text-xs">
+				<h2 class="text-base font-bold text-foreground">該当する本が見つかりませんでした</h2>
+				<p class="max-w-sm text-xs text-muted-foreground">
 					キーワードやISBN（ハイフン有無どちらでも可）をご確認の上、もう一度お試しください。
 				</p>
 			</div>
@@ -203,8 +205,8 @@
 				>
 					<Search class="h-6 w-6" />
 				</div>
-				<h2 class="text-foreground text-base font-semibold">気になる本を探してみましょう</h2>
-				<p class="text-muted-foreground max-w-sm text-xs">
+				<h2 class="text-base font-semibold text-foreground">気になる本を探してみましょう</h2>
+				<p class="max-w-sm text-xs text-muted-foreground">
 					タイトル、著者名、または13桁/10桁のISBNを入力すると、自動で書誌情報を取得します。
 				</p>
 			</div>

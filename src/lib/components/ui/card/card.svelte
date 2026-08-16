@@ -6,7 +6,7 @@
 </script>
 
 <div
-	class={cn('bg-card text-card-foreground rounded-xl border shadow-sm transition-all', className)}
+	class={cn('rounded-xl border bg-card text-card-foreground shadow-sm transition-all', className)}
 	{...restProps}
 >
 	{@render children?.()}

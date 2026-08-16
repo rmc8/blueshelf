@@ -139,7 +139,7 @@
 
 		<!-- Modal Content Box -->
 		<div
-			class="border-border bg-card relative z-10 max-h-[90vh] w-full max-w-lg space-y-6 overflow-y-auto rounded-t-2xl border p-5 shadow-2xl sm:rounded-2xl sm:p-6"
+			class="relative z-10 max-h-[90vh] w-full max-w-lg space-y-6 overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-2xl sm:rounded-2xl sm:p-6"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-book-title"
@@ -148,7 +148,7 @@
 			<button
 				type="button"
 				onclick={onClose}
-				class="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-4 right-4 rounded-full p-1.5 transition-colors"
+				class="absolute top-4 right-4 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 				aria-label="Close modal"
 			>
 				<X class="h-4 w-4" />
@@ -157,12 +157,12 @@
 			<!-- Book Header Info -->
 			<div class="flex items-start gap-4 pr-6">
 				<div
-					class="bg-muted/60 border-border/40 relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border shadow-sm"
+					class="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted/60 shadow-sm"
 				>
 					{#if book.coverUrl}
 						<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
 					{:else}
-						<div class="text-muted-foreground flex h-full w-full items-center justify-center">
+						<div class="flex h-full w-full items-center justify-center text-muted-foreground">
 							<Book class="h-6 w-6 opacity-30" />
 						</div>
 					{/if}
@@ -171,16 +171,16 @@
 				<div class="min-w-0 flex-1 space-y-1">
 					<h2
 						id="modal-book-title"
-						class="text-foreground line-clamp-2 text-base leading-snug font-bold sm:text-lg"
+						class="line-clamp-2 text-base leading-snug font-bold text-foreground sm:text-lg"
 					>
 						{book.title}
 					</h2>
 					{#if book.authors?.length}
-						<p class="text-muted-foreground line-clamp-1 text-xs">
+						<p class="line-clamp-1 text-xs text-muted-foreground">
 							{book.authors.join(', ')}
 						</p>
 					{/if}
-					<div class="text-muted-foreground/80 flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+					<div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-muted-foreground/80">
 						{#if book.publisher}
 							<span>{book.publisher}</span>
 						{/if}
@@ -196,7 +196,7 @@
 
 			<!-- Status Selector -->
 			<div class="space-y-2">
-				<span class="text-foreground text-xs font-semibold">ステータス</span>
+				<span class="text-xs font-semibold text-foreground">ステータス</span>
 				<div class="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
 					{#each statuses as s (s.type)}
 						{@const isSelected = selectedStatus === s.type}
@@ -220,7 +220,7 @@
 				<div class="space-y-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3.5">
 					<div class="flex items-center justify-between text-xs font-medium">
 						<span class="text-blue-700 dark:text-blue-300">進捗ページ数</span>
-						<span class="text-foreground font-bold">
+						<span class="font-bold text-foreground">
 							{currentPage} / {totalPages || '?'} ページ
 							{#if totalPages > 0}
 								({Math.round((currentPage / totalPages) * 100)}%)
@@ -233,7 +233,7 @@
 							min="0"
 							max={totalPages}
 							bind:value={currentPage}
-							class="bg-muted h-1.5 w-full cursor-pointer rounded-lg accent-blue-600"
+							class="h-1.5 w-full cursor-pointer rounded-lg bg-muted accent-blue-600"
 						/>
 					{/if}
 					<div class="flex items-center gap-2 pt-1">
@@ -244,29 +244,29 @@
 							bind:value={currentPage}
 							class="h-8 w-24 text-xs"
 						/>
-						<span class="text-muted-foreground text-xs">ページまで読んだ</span>
+						<span class="text-xs text-muted-foreground">ページまで読んだ</span>
 					</div>
 				</div>
 			{/if}
 
 			<!-- Star Rating -->
 			<div class="space-y-1.5">
-				<span class="text-foreground text-xs font-semibold">{m.rating()}</span>
+				<span class="text-xs font-semibold text-foreground">{m.rating()}</span>
 				<StarRating {rating} onChange={(r) => (rating = r)} />
 			</div>
 
 			<!-- Review & Thoughts Area -->
 			<div class="space-y-2">
 				<div class="flex items-center justify-between">
-					<span class="text-foreground text-xs font-semibold">{m.write_review()}</span>
-					<span class="text-muted-foreground text-[11px]">{reviewContent.length} / 1000</span>
+					<span class="text-xs font-semibold text-foreground">{m.write_review()}</span>
+					<span class="text-[11px] text-muted-foreground">{reviewContent.length} / 1000</span>
 				</div>
 				<textarea
 					bind:value={reviewContent}
 					rows="3"
 					maxlength="1000"
 					placeholder="読んだ感想や心に残ったフレーズをメモ..."
-					class="border-border/60 bg-card/60 text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary w-full rounded-xl border p-3 text-xs focus:ring-1 focus:outline-none sm:text-sm"
+					class="w-full rounded-xl border border-border/60 bg-card/60 p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none sm:text-sm"
 				></textarea>
 
 				<!-- Spoiler Checkbox -->
@@ -274,14 +274,14 @@
 					<input
 						type="checkbox"
 						bind:checked={hasSpoiler}
-						class="border-border text-primary focus:ring-primary h-3.5 w-3.5 rounded"
+						class="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
 					/>
-					<span class="text-muted-foreground text-xs">{m.spoiler_warning()}</span>
+					<span class="text-xs text-muted-foreground">{m.spoiler_warning()}</span>
 				</label>
 			</div>
 
 			<!-- Actions -->
-			<div class="border-border/40 flex items-center justify-end gap-2 border-t pt-2">
+			<div class="flex items-center justify-end gap-2 border-t border-border/40 pt-2">
 				<Button variant="outline" size="sm" onclick={onClose} disabled={isSaving}>
 					{m.cancel()}
 				</Button>
