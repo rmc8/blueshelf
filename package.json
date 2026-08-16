@@ -16,6 +16,7 @@
 	"dependencies": {
 		"@atproto/api": "^0.20.41",
 		"@atproto/oauth-client-browser": "^0.5.3",
+		"@fontsource-variable/noto-sans-jp": "^5.3.0",
 		"@lucide/svelte": "^1.31.0",
 		"@types/dompurify": "^3.2.0",
 		"@vite-pwa/sveltekit": "^1.1.0",
