@@ -1,4 +1,4 @@
-import { BrowserOAuthClient, type OAuthSession } from '@atproto/oauth-client-browser';
+import type { BrowserOAuthClient, OAuthSession } from '@atproto/oauth-client-browser';
 import { Agent } from '@atproto/api';
 
 let oauthClient: BrowserOAuthClient | null = null;
@@ -15,13 +15,14 @@ function isLoopback(hostname: string): boolean {
 }
 
 /**
- * OAuthClient インスタンスの取得 / 初期化
+ * OAuthClient インスタンスの取得 / 初期化 (ブラウザ環境でのみ動的ロード)
  */
 export async function getOAuthClient(): Promise<BrowserOAuthClient | null> {
 	if (typeof window === 'undefined') return null;
 	if (oauthClient) return oauthClient;
 
 	try {
+		const { BrowserOAuthClient } = await import('@atproto/oauth-client-browser');
 		const isDev = isLoopback(window.location.hostname);
 		const origin = window.location.origin;
 

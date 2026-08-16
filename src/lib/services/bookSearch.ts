@@ -89,7 +89,7 @@ async function fetchByKeyword(query: string, maxResults: number): Promise<BookRe
 async function fetchGoogleBooks(q: string, maxResults: number): Promise<BookRef[]> {
 	try {
 		const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=${maxResults}`;
-		const res = await fetch(url);
+		const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
 		if (!res.ok) return [];
 
 		const data = await res.json();
@@ -140,7 +140,7 @@ async function fetchGoogleBooks(q: string, maxResults: number): Promise<BookRef[
 async function fetchOpenLibrary(query: string, maxResults = 20): Promise<BookRef[]> {
 	try {
 		const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${maxResults}`;
-		const res = await fetch(url);
+		const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
 		if (!res.ok) return [];
 
 		const data = await res.json();
@@ -204,7 +204,7 @@ async function fetchOpenBdBatches(isbns: string[]): Promise<Map<string, Partial<
 
 	try {
 		const url = `https://api.openbd.jp/v1/get?isbn=${isbns.slice(0, 20).join(',')}`;
-		const res = await fetch(url);
+		const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
 		if (!res.ok) return map;
 
 		const data = await res.json();
@@ -234,8 +234,9 @@ async function fetchOpenBdBatches(isbns: string[]): Promise<Map<string, Partial<
  */
 async function fetchOpenBd(isbn: string): Promise<BookRef | null> {
 	try {
-		const url = `https://api.openbd.jp/v1/get?isbn=${isbn}`;
-		const res = await fetch(url);
+		const res = await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`, {
+			signal: AbortSignal.timeout(5000)
+		});
 		if (!res.ok) return null;
 
 		const data = await res.json();

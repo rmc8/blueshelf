@@ -4,15 +4,15 @@ Blueshelf (AT Protocol 読書管理・SNS Web/PWA) の開発・コーディン�
 
 ## 🛠️ 開発コマンド
 
-すべてのタスクは `deno` コマンドで実行します。
+すべてのタスクは `pnpm` コマンドで実行します。
 
 ```bash
-deno task dev      # 開発サーバー
-deno task test     # 単体テスト (TDD / node:test)
-deno task check    # 型チェック (TypeScript & Svelte)
-deno task build    # プロダクションビルド (SPA + PWA)
-deno task format   # フォーマット
-deno task lint     # リント
+pnpm dev      # 開発サーバー (Vite)
+pnpm test     # 単体テスト (TDD / tsx + node:test)
+pnpm check    # 型チェック (TypeScript & Svelte)
+pnpm build    # プロダクションビルド (SPA + PWA)
+pnpm format   # フォーマット (Prettier)
+pnpm lint     # リント (ESLint & Prettier)
 ```
 
 ---
@@ -21,7 +21,7 @@ deno task lint     # リント
 
 1. **ケント・ベック流 TDD (テスト駆動開発) の実践**:
    - ビジネスロジック、データ変換、書誌API連携、パーサー等の新機能・改修は、まず失敗するテスト（Red）を書き、最小限の実装で成功させ（Green）、リファクタリング（Refactor）するサイクルを徹底します。
-   - 単体テストは `deno task test`（`node:test` + `node:assert/strict`）で実行します。
+   - 単体テストは `pnpm test`（`node:test` + `node:assert/strict`）で実行します。
 
 2. **Svelte 5 (Runes) の適用**:
    - 状態管理は `$state()`、派生値は `$derived()`、副作用は `$effect()` を使用します。

@@ -41,4 +41,26 @@ export class BlueshelfDatabase extends Dexie {
 	}
 }
 
-export const db = new BlueshelfDatabase();
+// Node.js / SSR テスト実行時に Dexie のタイマー/MessagePort がプロセスをハングさせないよう保護
+function createDatabaseInstance(): BlueshelfDatabase {
+	if (typeof indexedDB === 'undefined') {
+		const dummyTable = {
+			get: async () => undefined,
+			put: async () => undefined,
+			delete: async () => undefined,
+			toArray: async () => [],
+			where: () => ({ equals: () => ({ toArray: async () => [] }) }),
+			clear: async () => undefined
+		};
+		return new Proxy({} as BlueshelfDatabase, {
+			get: (target, prop) => {
+				if (prop === 'close') return () => {};
+				if (prop === 'open') return async () => {};
+				return dummyTable;
+			}
+		});
+	}
+	return new BlueshelfDatabase();
+}
+
+export const db = createDatabaseInstance();
