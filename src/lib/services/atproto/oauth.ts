@@ -68,6 +68,7 @@ export async function initSession(): Promise<{
 		}
 	} catch (err) {
 		console.warn('OAuth session init error:', err);
+		throw err;
 	}
 
 	return { session: null, agent: null };
