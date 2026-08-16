@@ -4,8 +4,9 @@
 		"dev": "deno run -A --node-modules-dir npm:vite dev --host",
 		"build": "deno run -A --node-modules-dir npm:vite build",
 		"preview": "deno run -A --node-modules-dir npm:vite preview",
-		"sync": "deno run -A --node-modules-dir npm:@sveltejs/kit sync",
-		"check": "deno run -A --node-modules-dir npm:@sveltejs/kit sync && deno run -A --node-modules-dir npm:svelte-check --tsconfig ./tsconfig.json",
+		"compile": "deno run -A --node-modules-dir npm:@inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
+		"sync": "deno task compile && deno run -A --node-modules-dir npm:@sveltejs/kit sync",
+		"check": "deno task sync && deno run -A --node-modules-dir npm:svelte-check --tsconfig ./tsconfig.json",
 		"test": "deno test -A --sloppy-imports src/",
 		"lint": "deno run -A --node-modules-dir npm:prettier --check . && deno run -A --node-modules-dir npm:eslint .",
 		"format": "deno run -A --node-modules-dir npm:prettier --write ."
