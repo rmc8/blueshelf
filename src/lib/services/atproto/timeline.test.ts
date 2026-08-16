@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { sortTimelineItems, type TimelineItem, type TimelineActor } from './timeline.js';
-import type { BookRef } from '$lib/types/book.js';
+import { sortTimelineItems, type TimelineItem, type TimelineActor } from './timeline';
+import type { BookRef } from '$lib/types/book';
 
 describe('Reading Timeline Service (TDD)', () => {
 	const sampleActor1: TimelineActor = {

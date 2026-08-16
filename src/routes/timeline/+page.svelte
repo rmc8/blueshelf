@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { authState } from '$lib/stores/auth.svelte';
-	import { fetchAggregatedTimeline, type TimelineItem } from '$lib/services/atproto/timeline.js';
-	import type { BookRef } from '$lib/types/book.js';
-	import * as m from '$lib/paraglide/messages';
+	import { fetchAggregatedTimeline, type TimelineItem } from '$lib/services/atproto/timeline';
+	import type { BookRef } from '$lib/types/book';
+	import * as m from '$lib/paraglide/messages.js';
 	import { Button } from '$lib/components/ui/button';
 	import TimelineCard from '$lib/components/timeline/TimelineCard.svelte';
 	import BookRecordModal from '$lib/components/book/BookRecordModal.svelte';

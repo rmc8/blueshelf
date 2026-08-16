@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { TimelineItem } from '$lib/services/atproto/timeline.js';
-	import type { BookRef } from '$lib/types/book.js';
-	import * as m from '$lib/paraglide/messages';
+	import type { TimelineItem } from '$lib/services/atproto/timeline';
+	import type { BookRef } from '$lib/types/book';
+	import * as m from '$lib/paraglide/messages.js';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import StarRating from '$lib/components/book/StarRating.svelte';

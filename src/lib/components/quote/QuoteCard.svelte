@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { QuoteRecord } from '$lib/services/quoteRecord.js';
-	import { formatQuoteForShare } from '$lib/services/quoteRecord.js';
-	import * as m from '$lib/paraglide/messages';
+	import type { QuoteRecord } from '$lib/services/quoteRecord';
+	import { formatQuoteForShare } from '$lib/services/quoteRecord';
+	import * as m from '$lib/paraglide/messages.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Quote, Share2, Copy, Check } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';

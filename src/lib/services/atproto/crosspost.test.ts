@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCrosspostText, buildCrosspostFacets, buildExternalEmbed } from './crosspost.js';
-import type { BookRef } from '$lib/types/book.js';
+import { buildCrosspostText, buildCrosspostFacets, buildExternalEmbed } from './crosspost';
+import type { BookRef } from '$lib/types/book';
 
 describe('Bluesky Crosspost Service (TDD)', () => {
 	const sampleBook: BookRef = {

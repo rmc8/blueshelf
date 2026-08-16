@@ -15,7 +15,7 @@
 		Share2,
 		Save
 	} from '@lucide/svelte';
-	import * as m from '$lib/paraglide/messages';
+	import * as m from '$lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {
