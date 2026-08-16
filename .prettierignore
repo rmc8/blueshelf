@@ -2,6 +2,6 @@ node_modules
 build
 .svelte-kit
 src/lib/paraglide
-project.inlang/cache
+project.inlang
 .playwright-mcp
 deno.lock
