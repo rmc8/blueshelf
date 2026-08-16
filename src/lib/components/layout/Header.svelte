@@ -115,7 +115,16 @@
 									@{authState.user.handle}
 								</p>
 							</div>
-							<div class="p-1">
+							<div class="space-y-0.5 p-1">
+								<a
+									href="/profile/{authState.user.handle}"
+									onclick={() => (isUserMenuOpen = false)}
+									class="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-muted"
+								>
+									<UserIcon class="h-3.5 w-3.5 text-muted-foreground" />
+									<span>公開本棚を見る</span>
+								</a>
+
 								<button
 									type="button"
 									onclick={handleLogout}
