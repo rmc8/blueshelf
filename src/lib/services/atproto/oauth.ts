@@ -26,7 +26,7 @@ export async function getOAuthClient(): Promise<BrowserOAuthClient | null> {
 		const origin = window.location.origin;
 
 		if (isDev) {
-			// ローカル開発環境: BrowserOAuthClient の自動 Loopback Metadata 生成を使用
+			// ローカル開発環境: BrowserOAuthClient の自動 Loopback 初期化（scope: 'atproto'）
 			oauthClient = new BrowserOAuthClient({
 				handleResolver: 'https://bsky.social'
 			});
@@ -83,10 +83,8 @@ export async function signIn(handle: string): Promise<void> {
 	const cleanHandle = handle.trim().replace(/^@/, '');
 	if (!cleanHandle) throw new Error('Bluesky のハンドル名を入力してください');
 
-	// 認可フローの開始（Bluesky / PDS のログイン画面へリダイレクト）
-	await client.signIn(cleanHandle, {
-		scope: 'atproto transition:generic'
-	});
+	// 認可フローの開始（clientMetadata に定義された 'atproto' スコープを使用）
+	await client.signIn(cleanHandle);
 }
 
 /**

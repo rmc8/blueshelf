@@ -7,14 +7,12 @@
 	"policy_uri": "https://blueshelf.app/privacy",
 	"redirect_uris": [
 		"https://blueshelf.app/oauth/callback",
-		"http://localhost:5173/oauth/callback",
 		"http://127.0.0.1:5173/oauth/callback",
-		"http://localhost:4173/oauth/callback",
 		"http://127.0.0.1:4173/oauth/callback"
 	],
 	"grant_types": ["authorization_code", "refresh_token"],
 	"response_types": ["code"],
-	"scope": "atproto transition:generic",
+	"scope": "atproto",
 	"token_endpoint_auth_method": "none",
 	"dpop_bound_access_tokens": true
 }
