@@ -55,11 +55,12 @@
 
 		<!-- Reading Status Badge (if already on shelf) -->
 		{#if status}
-			<div class="absolute top-2 left-2 shadow-sm">
-				<Badge variant={status} class="px-2 py-0.5 text-[10px] font-semibold backdrop-blur-md">
-					{getStatusLabel(status)}
-				</Badge>
-			</div>
+			<Badge
+				variant={status}
+				class="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-semibold backdrop-blur-md shadow-xs rounded-md"
+			>
+				{getStatusLabel(status)}
+			</Badge>
 		{/if}
 
 		<!-- Hover Action Overlay -->
