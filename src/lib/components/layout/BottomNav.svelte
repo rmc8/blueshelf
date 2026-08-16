@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import * as m from '$lib/paraglide/messages';
-	import { Home, Library, Search, Settings } from '@lucide/svelte';
+	import { Home, Library, Search, Sparkles } from '@lucide/svelte';
 
 	const navItems = [
 		{ href: '/', label: 'Home', icon: Home },
+		{ href: '/timeline', label: () => m.nav_timeline(), icon: Sparkles },
 		{ href: '/shelf', label: () => m.my_shelf(), icon: Library },
-		{ href: '/search', label: () => m.search(), icon: Search },
-		{ href: '/settings', label: () => m.settings(), icon: Settings }
+		{ href: '/search', label: () => m.search(), icon: Search }
 	];
 </script>
 
