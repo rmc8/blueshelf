@@ -30,6 +30,7 @@ export default defineConfig({
 		}),
 
 		SvelteKitPWA({
+			registerType: 'autoUpdate',
 			manifest: {
 				name: 'Blueshelf',
 				short_name: 'Blueshelf',
@@ -47,7 +48,10 @@ export default defineConfig({
 				]
 			},
 			workbox: {
-				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
+				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
+				clientsClaim: true,
+				skipWaiting: true,
+				cleanupOutdatedCaches: true
 			}
 		})
 	]
