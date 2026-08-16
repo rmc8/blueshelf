@@ -12,10 +12,10 @@
 
 ## 🧪 テスト & 品質検証 (Verification)
 
-- [ ] `deno task lint` (Prettier & ESLint)
-- [ ] `deno task check` (TypeScript & Svelte 5 Diagnostics)
-- [ ] `deno task test` (単体テスト全件 Green)
-- [ ] `deno task build` (プロダクションビルド & PWA 生成)
+- [ ] `pnpm lint` (Prettier & ESLint)
+- [ ] `pnpm check` (TypeScript & Svelte 5 Diagnostics)
+- [ ] `pnpm test` (単体テスト全件 Green)
+- [ ] `pnpm build` (プロダクションビルド & PWA 生成)
 
 ## 📸 スクリーンショット / 動作確認 (Screenshots)
 
