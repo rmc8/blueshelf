@@ -8,11 +8,8 @@
 	"redirect_uris": [
 		"https://bs.rmc-8.com/oauth/callback",
 		"http://127.0.0.1:5173/oauth/callback",
-		"http://localhost:5173/oauth/callback",
 		"http://127.0.0.1:4173/oauth/callback",
-		"http://localhost:4173/oauth/callback",
-		"http://127.0.0.1:4174/oauth/callback",
-		"http://localhost:4174/oauth/callback"
+		"http://127.0.0.1:4174/oauth/callback"
 	],
 	"grant_types": ["authorization_code", "refresh_token"],
 	"response_types": ["code"],
