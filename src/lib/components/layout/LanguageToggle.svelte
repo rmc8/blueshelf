@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { getLocale, setLocale, locales } from '$lib/paraglide/runtime';
-	import * as m from '$lib/paraglide/messages';
+	import { getLocale, setLocale } from '$lib/paraglide/runtime';
 	import { Languages } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 
@@ -15,11 +14,11 @@
 
 <Button
 	variant="ghost"
-	size="sm"
+	size="icon"
 	onclick={toggleLanguage}
-	class="flex items-center gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+	class="h-9 w-9 text-muted-foreground hover:text-foreground"
 	title={currentLocale === 'ja' ? 'Switch to English' : '日本語に切り替え'}
+	aria-label="Toggle language"
 >
 	<Languages class="h-4 w-4" />
-	<span class="uppercase font-semibold tracking-wider">{currentLocale}</span>
 </Button>

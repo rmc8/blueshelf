@@ -2,6 +2,7 @@
 	import * as m from '$lib/paraglide/messages';
 	import { Search, LogIn } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
+	import LanguageToggle from './LanguageToggle.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 </script>
 
@@ -39,6 +40,9 @@
 					</kbd>
 				</Button>
 			</a>
+
+			<!-- Language Toggle (Icon only) -->
+			<LanguageToggle />
 
 			<!-- Theme Toggle -->
 			<ThemeToggle />
