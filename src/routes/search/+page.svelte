@@ -2,7 +2,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import * as m from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
-	import { searchBooks } from '$lib/services/bookSearch';
+	import { searchBooks, type SearchResult } from '$lib/services/bookSearch';
 	import { getAllReadingRecords } from '$lib/services/bookRecord';
 	import type { BookRef, ReadingStatusType } from '$lib/types/book';
 	import { Input } from '$lib/components/ui/input';
@@ -22,6 +22,7 @@
 	// ページネーション
 	let currentPage = $state(1);
 	let perPage = $state(20);
+	let totalCount = $state(0); // APIからの推定総件数
 	let hasMorePages = $state(false);
 	let isLoadingMore = $state(false);
 
@@ -91,19 +92,24 @@
 		}
 
 		try {
-			const results = await searchBooks(trimmed, page, perPage);
+			const result = await searchBooks(trimmed, page, perPage);
+			const { books, total } = result;
 			if (append) {
-				searchResults = [...searchResults, ...results];
+				searchResults = [...searchResults, ...books];
 			} else {
-				searchResults = results;
+				searchResults = books;
+				totalCount = total;
 			}
 			// 取得件数が要求件数と同じなら次ページがある可能性
-			hasMorePages = results.length >= perPage;
+			hasMorePages = books.length >= perPage && searchResults.length < (totalCount || Infinity);
 			currentPage = page;
 		} catch (err) {
 			console.error('Book search error:', err);
 			toast.error(m.search_error());
-			if (!append) searchResults = [];
+			if (!append) {
+				searchResults = [];
+				totalCount = 0;
+			}
 		} finally {
 			isLoading = false;
 			isLoadingMore = false;
@@ -139,6 +145,7 @@
 		hasSearched = false;
 		hasMorePages = false;
 		currentPage = 1;
+		totalCount = 0;
 	}
 
 	function handleSelectBook(book: BookRef) {
@@ -242,7 +249,11 @@
 				<!-- Results Header: count + per-page selector -->
 				<div class="flex items-center justify-between px-1">
 					<span class="text-xs text-muted-foreground">
-						{m.search_results_count({ count: searchResults.length })}
+						{#if totalCount > 0}
+							{searchResults.length}件表示（推定約 {totalCount.toLocaleString()}件中）
+						{:else}
+							{m.search_results_count({ count: searchResults.length })}
+						{/if}
 					</span>
 					<label class="flex items-center gap-1.5 text-xs text-muted-foreground">
 						表示件数:

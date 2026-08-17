@@ -2,6 +2,20 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { searchBooks } from './bookSearch';
 
+// CiNii RSS のモック（opensearch:totalResults 付き）
+const MOCK_CINII_RSS = (title: string, author: string, publisher: string, isbn?: string) => `
+<rss>
+  <channel>
+    <opensearch:totalResults>42</opensearch:totalResults>
+    <item>
+      <title>${title}</title>
+      <dc:creator>${author}</dc:creator>
+      <dc:publisher>${publisher}</dc:publisher>
+      ${isbn ? `<dcterms:hasPart rdf:resource="urn:isbn:${isbn}"/>` : ''}
+    </item>
+  </channel>
+</rss>`;
+
 describe('BookSearch Service (TDD)', () => {
 	const originalFetch = globalThis.fetch;
 
@@ -29,6 +43,7 @@ describe('BookSearch Service (TDD)', () => {
 				return {
 					ok: true,
 					json: async () => ({
+						numFound: 10,
 						docs: [
 							{
 								title: 'SvelteKit Guide',
@@ -40,21 +55,11 @@ describe('BookSearch Service (TDD)', () => {
 					})
 				} as Response;
 			}
-			if (url.includes('ndlsearch.ndl.go.jp')) {
+			if (url.includes('ci.nii.ac.jp')) {
 				return {
 					ok: true,
-					text: async () => `
-						<rss>
-							<channel>
-								<item>
-									<title>実践Svelte入門</title>
-									<author>Kyohei Hamaguchi</author>
-									<dc:publisher>技術評論社</dc:publisher>
-									<dc:identifier xsi:type="dcndl:ISBN">978-4-297-13495-2</dc:identifier>
-								</item>
-							</channel>
-						</rss>
-					`
+					text: async () =>
+						MOCK_CINII_RSS('実践Svelte入門', 'Kyohei Hamaguchi', '技術評論社', '9784297134952')
 				} as Response;
 			}
 			return {
@@ -69,21 +74,25 @@ describe('BookSearch Service (TDD)', () => {
 		globalThis.fetch = originalFetch;
 	});
 
-	it('returns empty array when query is empty or whitespace', async () => {
+	it('returns empty array and total 0 when query is empty or whitespace', async () => {
 		const res1 = await searchBooks('');
 		const res2 = await searchBooks('   ');
-		assert.deepEqual(res1, []);
-		assert.deepEqual(res2, []);
+		assert.deepEqual(res1.books, []);
+		assert.equal(res1.total, 0);
+		assert.deepEqual(res2.books, []);
+		assert.equal(res2.total, 0);
 	});
 
-	it('fetches English books by keyword via Open Library', async () => {
-		const results = await searchBooks('SvelteKit', 1, 5);
-		assert.ok(Array.isArray(results));
-		assert.ok(results.length > 0);
-		// 新戦略: CiNii・NDL・Open Library を並行取得し和書優先ソート。
-		// NDLからの和書（実践Svelte入門）が先頭になる可能性があるため、
-		// 結果にSvelteKit Guideが含まれることを確認する。
-		const sveltekitBook = results.find((b) => b.title === 'SvelteKit Guide');
+	it('fetches books by keyword and returns SearchResult with books and total', async () => {
+		const result = await searchBooks('SvelteKit', 1, 5);
+		assert.ok(Array.isArray(result.books));
+		assert.ok(result.books.length > 0);
+		assert.ok(typeof result.total === 'number');
+		// CiNii mock returns totalResults=42
+		assert.ok(result.total > 0, 'total should be > 0');
+
+		// 結果に SvelteKit Guide が含まれることを確認
+		const sveltekitBook = result.books.find((b) => b.title === 'SvelteKit Guide');
 		assert.ok(sveltekitBook, 'SvelteKit Guide should be in results');
 		assert.deepEqual(sveltekitBook!.authors, ['Rich Harris']);
 		// openBD の書影補完が効くため、openBD のカバーが優先される
@@ -91,34 +100,25 @@ describe('BookSearch Service (TDD)', () => {
 	});
 
 	it('fetches books by ISBN-13 via openBD + Open Library (parallel)', async () => {
-		const results = await searchBooks('978-4-297-12635-3');
-		assert.ok(Array.isArray(results));
-		assert.ok(results.length > 0);
-		const book = results[0];
+		const result = await searchBooks('978-4-297-12635-3');
+		assert.ok(Array.isArray(result.books));
+		assert.ok(result.books.length > 0);
+		const book = result.books[0];
 		assert.equal(book.isbn13, '9784297126353');
 		// openBD has priority for title and cover
 		assert.equal(book.title, 'SvelteKit Guide');
 		assert.equal(book.coverUrl, 'https://cover.openbd.jp/9784297126353.jpg');
 	});
 
-	it('searches Japanese books via NDL + openBD (primary path)', async () => {
+	it('searches Japanese books via CiNii + openBD (primary path)', async () => {
+		// CiNii mock returns 実践Svelte入門 with ISBN
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
-			if (url.includes('ndlsearch.ndl.go.jp')) {
+			if (url.includes('ci.nii.ac.jp')) {
 				return {
 					ok: true,
-					text: async () => `
-						<rss>
-							<channel>
-								<item>
-									<title>実践Svelte入門</title>
-									<author>Kyohei Hamaguchi</author>
-									<dc:publisher>技術評論社</dc:publisher>
-									<dc:identifier xsi:type="dcndl:ISBN">978-4-297-13495-2</dc:identifier>
-								</item>
-							</channel>
-						</rss>
-					`
+					text: async () =>
+						MOCK_CINII_RSS('実践Svelte入門', 'Kyohei Hamaguchi', '技術評論社', '9784297134952')
 				} as Response;
 			}
 			if (url.includes('openbd.jp')) {
@@ -140,71 +140,68 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('実践Svelte', 1, 5);
-		assert.ok(results.length > 0);
-		assert.equal(results[0].title, '実践Svelte入門');
-		assert.equal(results[0].isbn13, '9784297134952');
-		assert.equal(results[0].coverUrl, 'https://cover.openbd.jp/9784297134952.jpg');
+		const result = await searchBooks('実践Svelte', 1, 5);
+		assert.ok(result.books.length > 0);
+		assert.equal(result.books[0].title, '実践Svelte入門');
+		assert.equal(result.books[0].isbn13, '9784297134952');
+		assert.equal(result.books[0].coverUrl, 'https://cover.openbd.jp/9784297134952.jpg');
 	});
 
-	it('leaves coverUrl undefined when openBD has no cover (triggers instant placeholder cover)', async () => {
+	it('uses Google Books cover fallback when openBD has no cover', async () => {
+		// CiNii returns 人間失格 with ISBN, openBD has no cover
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
-			if (url.includes('ndlsearch.ndl.go.jp')) {
+			if (url.includes('ci.nii.ac.jp')) {
 				return {
 					ok: true,
-					text: async () => `
-						<rss>
-							<channel>
-								<item>
-									<title>人間失格</title>
-									<author>太宰治</author>
-									<dc:publisher>新潮社</dc:publisher>
-									<dc:identifier xsi:type="dcndl:ISBN">978-4-10-100601-0</dc:identifier>
-								</item>
-							</channel>
-						</rss>
-					`
+					text: async () => MOCK_CINII_RSS('人間失格', '太宰治', '新潮社', '9784101006000')
 				} as Response;
 			}
 			if (url.includes('openbd.jp')) {
-				// openBD has no cover for this book
-				return { ok: true, json: async () => [null] } as Response;
+				// openBD has no cover for this book (cover is empty string)
+				return {
+					ok: true,
+					json: async () => [
+						{
+							summary: {
+								isbn: '9784101006000',
+								title: '人間失格',
+								author: '太宰治',
+								publisher: '新潮社',
+								cover: ''
+							}
+						}
+					]
+				} as Response;
 			}
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('人間失格', 1, 5);
-		assert.ok(results.length > 0);
-		assert.equal(results[0].title, '人間失格');
-		// openBD に書影がない場合は undefined（仮書影コンポーネントが0msで即時描画される）
-		assert.equal(results[0].coverUrl, undefined);
+		const result = await searchBooks('人間失格', 1, 5);
+		assert.ok(result.books.length > 0);
+		assert.equal(result.books[0].title, '人間失格');
+		// openBD に書影がない場合は Google Books フォールバック URL が設定される
+		assert.ok(
+			result.books[0].coverUrl?.includes('books.google.com'),
+			'Should fall back to Google Books cover URL'
+		);
 	});
 
-	it('falls back from Open Library to NDL for English query when OL has no results', async () => {
-		// Mock: Open Library returns empty, NDL has a result
+	it('returns books even when Open Library returns empty results', async () => {
+		// Mock: Open Library returns empty, CiNii has a result
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
 			if (url.includes('openlibrary.org')) {
 				return {
 					ok: true,
-					json: async () => ({ docs: [] })
+					json: async () => ({ numFound: 0, docs: [] })
 				} as Response;
 			}
-			if (url.includes('ndlsearch.ndl.go.jp')) {
+			if (url.includes('ci.nii.ac.jp')) {
 				return {
 					ok: true,
-					text: async () => `
-						<rss>
-							<channel>
-								<item>
-									<title>Rare Book Title</title>
-									<author>Some Author</author>
-									<dc:publisher>Publisher Co</dc:publisher>
-								</item>
-							</channel>
-						</rss>
-					`
+					text: async () =>
+						MOCK_CINII_RSS('Rare Book Title', 'Some Author', 'Publisher Co', undefined)
 				} as Response;
 			}
 			if (url.includes('openbd.jp')) {
@@ -213,35 +210,24 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('Rare Book Title', 1, 5);
-		assert.ok(results.length > 0);
-		assert.equal(results[0].title, 'Rare Book Title');
+		const result = await searchBooks('Rare Book Title', 1, 5);
+		assert.ok(result.books.length > 0);
+		assert.equal(result.books[0].title, 'Rare Book Title');
 	});
 
-	it('falls back to CiNii Books when NDL returns 429 Too Many Requests', async () => {
+	it('returns CiNii books even when Open Library fails', async () => {
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
-			if (url.includes('ndlsearch.ndl.go.jp')) {
-				return {
-					ok: false,
-					status: 429,
-					text: async () => '<code>429</code><message>Too Many Requests</message>'
-				} as Response;
-			}
 			if (url.includes('ci.nii.ac.jp')) {
 				return {
 					ok: true,
-					text: async () => `
-						<rdf:RDF>
-							<channel><title>CiNii</title></channel>
-							<item>
-								<title>リーダブルコード : より良いコードを書くためのシンプルな実践テクニック</title>
-								<dc:creator>Dustin Boswell, Trevor Foucher</dc:creator>
-								<dc:publisher>オライリー・ジャパン</dc:publisher>
-								<dcterms:hasPart rdf:resource="urn:isbn:9784873115658"/>
-							</item>
-						</rdf:RDF>
-					`
+					text: async () =>
+						MOCK_CINII_RSS(
+							'リーダブルコード : より良いコードを書くためのシンプルな実践テクニック',
+							'Dustin Boswell, Trevor Foucher',
+							'オライリー・ジャパン',
+							'9784873115658'
+						)
 				} as Response;
 			}
 			if (url.includes('openbd.jp')) {
@@ -263,25 +249,27 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('オライリー', 1, 5);
-		assert.ok(results.length > 0);
-		assert.equal(results[0].isbn13, '9784873115658');
-		assert.equal(results[0].publisher, 'オライリー・ジャパン');
-		assert.equal(results[0].coverUrl, 'https://cover.openbd.jp/9784873115658.jpg');
+		const result = await searchBooks('オライリー', 1, 5);
+		assert.ok(result.books.length > 0);
+		assert.equal(result.books[0].isbn13, '9784873115658');
+		assert.equal(result.books[0].publisher, 'オライリー・ジャパン');
+		assert.equal(result.books[0].coverUrl, 'https://cover.openbd.jp/9784873115658.jpg');
 	});
 
-	it('does not call Google Books API (no googleapis.com requests)', async () => {
-		let googleBooksCalled = false;
+	it('does not call googleapis.com (Google Books API key endpoint)', async () => {
+		// Verify we only use the non-key Google Books content URL for images (not googleapis.com)
+		let googleApiCalled = false;
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
 			if (url.includes('googleapis.com')) {
-				googleBooksCalled = true;
+				googleApiCalled = true;
 				return { ok: false, status: 429 } as Response;
 			}
 			if (url.includes('openlibrary.org')) {
 				return {
 					ok: true,
 					json: async () => ({
+						numFound: 1,
 						docs: [
 							{
 								title: 'Test Book',
@@ -300,6 +288,10 @@ describe('BookSearch Service (TDD)', () => {
 		};
 
 		await searchBooks('Test Book', 1, 5);
-		assert.equal(googleBooksCalled, false, 'Google Books API should never be called');
+		assert.equal(
+			googleApiCalled,
+			false,
+			'googleapis.com (API key endpoint) should never be called'
+		);
 	});
 });
