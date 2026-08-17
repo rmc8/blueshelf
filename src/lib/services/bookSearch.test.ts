@@ -175,10 +175,7 @@ describe('BookSearch Service (TDD)', () => {
 		assert.ok(results.length > 0);
 		assert.equal(results[0].title, '人間失格');
 		// openBD に書影がないので、Open Library ISBN ベースの cover URL にフォールバック
-		assert.equal(
-			results[0].coverUrl,
-			'https://covers.openlibrary.org/b/isbn/9784101006010-M.jpg'
-		);
+		assert.equal(results[0].coverUrl, 'https://covers.openlibrary.org/b/isbn/9784101006010-M.jpg');
 	});
 
 	it('falls back from Open Library to NDL for English query when OL has no results', async () => {
