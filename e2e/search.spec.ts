@@ -13,15 +13,19 @@ test.describe('Book Search Page E2E (GitHub Pages Environment)', () => {
 
 		const suggestionChips = page.locator('button:has-text("伊坂幸太郎")');
 		await expect(suggestionChips).toBeVisible();
+
+		const searchButton = page.locator('button[type="submit"]:has-text("検索")');
+		await expect(searchButton).toBeVisible();
 	});
 
-	test('searches Japanese books for "伊坂幸太郎" and renders results with covers', async ({
+	test('searches Japanese books for "伊坂幸太郎" via Enter key and renders results with covers', async ({
 		page
 	}) => {
 		await page.goto('/search/');
 
 		const searchInput = page.getByPlaceholder('タイトル・著者名・ISBNで検索');
 		await searchInput.fill('伊坂幸太郎');
+		await searchInput.press('Enter');
 
 		// 検索結果カード (.grid > div) が表示されるのを待機
 		const firstBookCard = page.locator('.grid > div').first();
@@ -69,13 +73,16 @@ test.describe('Book Search Page E2E (GitHub Pages Environment)', () => {
 		await page.screenshot({ path: 'test-results/murakami-search-success.png', fullPage: true });
 	});
 
-	test('searches publisher/keyword "オライリー" and renders books with covers', async ({
+	test('searches publisher/keyword "オライリー" via search button click and renders books with covers', async ({
 		page
 	}) => {
 		await page.goto('/search/');
 
 		const searchInput = page.getByPlaceholder('タイトル・著者名・ISBNで検索');
 		await searchInput.fill('オライリー');
+
+		const searchButton = page.locator('button[type="submit"]:has-text("検索")');
+		await searchButton.click();
 
 		// 検索結果カードが表示されること（NDL/CiNii/OpenLibrary横断）
 		const firstBookCard = page.locator('.grid > div').first();
