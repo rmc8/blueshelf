@@ -2,7 +2,8 @@
 	import type { ShelfItem } from '$lib/services/bookRecord';
 	import { Badge } from '$lib/components/ui/badge';
 	import StarRating from '$lib/components/book/StarRating.svelte';
-	import { Book, ChevronRight } from '@lucide/svelte';
+	import BookCoverPlaceholder from '$lib/components/book/BookCoverPlaceholder.svelte';
+	import { ChevronRight } from '@lucide/svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -49,9 +50,11 @@
 			{#if book.coverUrl}
 				<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
 			{:else}
-				<div class="flex h-full w-full items-center justify-center text-muted-foreground">
-					<Book class="h-5 w-5 opacity-30" />
-				</div>
+				<BookCoverPlaceholder
+					title={book.title}
+					author={book.authors?.[0]}
+					publisher={book.publisher}
+				/>
 			{/if}
 		</div>
 

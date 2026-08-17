@@ -2,7 +2,8 @@
 	import type { BookRef, ReadingStatus } from '$lib/types/book';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent } from '$lib/components/ui/card';
-	import { Book, Plus } from '@lucide/svelte';
+	import BookCoverPlaceholder from '$lib/components/book/BookCoverPlaceholder.svelte';
+	import { Plus } from '@lucide/svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -12,6 +13,8 @@
 	}
 
 	let { book, status, onSelect }: Props = $props();
+
+	let imageError = $state(false);
 
 	function getStatusLabel(s: ReadingStatus) {
 		switch (s) {
@@ -37,20 +40,20 @@
 >
 	<!-- Cover Image (2:3 Aspect Ratio) -->
 	<div class="relative aspect-2/3 w-full overflow-hidden bg-muted/60">
-		{#if book.coverUrl}
+		{#if book.coverUrl && !imageError}
 			<img
 				src={book.coverUrl}
 				alt={book.title}
 				class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
 				loading="lazy"
+				onerror={() => (imageError = true)}
 			/>
 		{:else}
-			<div
-				class="flex h-full w-full flex-col items-center justify-center bg-muted/40 p-4 text-center text-muted-foreground"
-			>
-				<Book class="mb-2 h-10 w-10 opacity-30" />
-				<span class="line-clamp-2 px-1 text-xs font-medium">{book.title}</span>
-			</div>
+			<BookCoverPlaceholder
+				title={book.title}
+				author={book.authors?.[0]}
+				publisher={book.publisher}
+			/>
 		{/if}
 
 		<!-- Reading Status Badge (if already on shelf) -->

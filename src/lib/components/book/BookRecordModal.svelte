@@ -4,6 +4,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import StarRating from '$lib/components/book/StarRating.svelte';
+	import BookCoverPlaceholder from '$lib/components/book/BookCoverPlaceholder.svelte';
 	import {
 		X,
 		Book,
@@ -262,9 +263,11 @@
 					{#if book.coverUrl}
 						<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
 					{:else}
-						<div class="flex h-full w-full items-center justify-center text-muted-foreground">
-							<Book class="h-6 w-6 opacity-30" />
-						</div>
+						<BookCoverPlaceholder
+							title={book.title}
+							author={book.authors?.[0]}
+							publisher={book.publisher}
+						/>
 					{/if}
 				</div>
 
