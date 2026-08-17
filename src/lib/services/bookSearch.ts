@@ -58,7 +58,7 @@ async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
 
 	const merged: BookRef = {
 		isbn13: isbn.length === 13 ? isbn : openbd?.isbn13 || ol?.isbn13,
-		isbn10: isbn.length === 10 ? isbn : ol?.isbn10,
+		isbn10: isbn10 || ol?.isbn10,
 		title: openbd?.title || ol?.title || 'Unknown Title',
 		authors: openbd?.authors?.length ? openbd.authors : ol?.authors || ['Unknown Author'],
 		publisher: openbd?.publisher || ol?.publisher,
