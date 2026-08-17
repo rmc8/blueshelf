@@ -13,7 +13,16 @@ const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30日
  * - openBD: 和書の高品質公式書影・解説
  * - Open Library (Internet Archive): 洋書・グローバル書誌・ISBN書影配信
  */
-export async function searchBooks(query: string, maxResults = 20): Promise<BookRef[]> {
+/**
+ * ISBN または キーワードから書籍を検索（ページネーション対応）
+ *
+ * 完全無料・APIキー不要・無制限の公開データ基盤:
+ * - CiNii Books (国立情報学研究所): 全国の大学図書館・専門書・技術書（CORS対応）
+ * - openBD: 和書の高品質公式書影・解説
+ * - NDL (国立国会図書館サーチ): 和書納本総合目録
+ * - Open Library (Internet Archive): 洋書・グローバル書誌
+ */
+export async function searchBooks(query: string, page = 1, maxResults = 20): Promise<BookRef[]> {
 	const trimmed = query.trim();
 	if (!trimmed) return [];
 
@@ -22,7 +31,7 @@ export async function searchBooks(query: string, maxResults = 20): Promise<BookR
 	const isbn13 = parsedIsbn?.isValid ? parsedIsbn.isbn13 : null;
 
 	if (isbn13) {
-		if (typeof indexedDB !== 'undefined') {
+		if (typeof indexedDB !== 'undefined' && page === 1) {
 			try {
 				const cached = await db.books.get(isbn13);
 				if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
@@ -32,10 +41,10 @@ export async function searchBooks(query: string, maxResults = 20): Promise<BookR
 				// IndexedDB missing in SSR / Node test
 			}
 		}
-		return fetchByIsbn(isbn13);
+		return page === 1 ? fetchByIsbn(isbn13) : [];
 	}
 
-	return fetchByKeyword(trimmed, maxResults);
+	return fetchByKeyword(trimmed, page, maxResults);
 }
 
 /**
@@ -73,20 +82,19 @@ async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
 }
 
 /**
- * 書籍を【出版が新しい順（Newest First）】＆【和書優先】でソート
+ * 書籍を【和書優先】＆【出版が新しい順（Newest First）】でソート
  */
-function sortBooksByNewest(books: BookRef[], isJapanese: boolean): BookRef[] {
+function sortBooksByNewest(books: BookRef[]): BookRef[] {
 	return [...books].sort((a, b) => {
-		if (isJapanese) {
-			const aHasJa = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(
-				(a.title || '') + (a.publisher || '')
-			);
-			const bHasJa = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(
-				(b.title || '') + (b.publisher || '')
-			);
-			if (aHasJa && !bHasJa) return -1;
-			if (!aHasJa && bHasJa) return 1;
-		}
+		// 和書判定（タイトルまたは出版社に日本語が含まれる本）
+		const aHasJa = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(
+			(a.title || '') + (a.publisher || '')
+		);
+		const bHasJa = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(
+			(b.title || '') + (b.publisher || '')
+		);
+		if (aHasJa && !bHasJa) return -1;
+		if (!aHasJa && bHasJa) return 1;
 
 		// 出版年（西暦）の新しい順（降順: 2026 -> 2025 -> 2024 ...）
 		const yearA = parseInt((a.publishedDate || '').replace(/[^0-9]/g, '').slice(0, 4) || '0', 10);
@@ -104,48 +112,40 @@ function sortBooksByNewest(books: BookRef[], isJapanese: boolean): BookRef[] {
 }
 
 /**
- * キーワードによるハイブリッド検索
- * - 日本語クエリ: NDL (国会図書館) -> CiNii Books (NII学術・書籍) -> Open Library の3段フォールバック + openBD 書影
- * - 洋書/英数字クエリ: Open Library -> CiNii Books -> NDL
- * - すべて【出版が新しい順（Newest First）】に自動整列
+ * キーワードによるハイブリッド検索（ページネーション & 和書最優先）
+ * - クエリの種類（日本語・英字技術用語）に関わらず、CiNii / NDL の和書を最優先に統合
+ * - すべて【和書優先】＆【出版が新しい順（Newest First）】に自動整列
  */
-async function fetchByKeyword(query: string, maxResults: number): Promise<BookRef[]> {
-	const containsJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u.test(query);
+async function fetchByKeyword(query: string, page: number, maxResults: number): Promise<BookRef[]> {
+	// CiNii Books (学術・商業和書・CORS対応) と NDL (国会図書館) を並行探索
+	const [ciniiResults, ndlResults, olResults] = await Promise.allSettled([
+		fetchCiniiBooks(query, page, maxResults),
+		fetchNdlSearch(query, page, maxResults),
+		fetchOpenLibrary(query, page, maxResults)
+	]);
 
-	if (containsJapanese) {
-		// 1. 和書は NDL + openBD を最優先
-		const ndlBooks = await fetchNdlSearch(query, maxResults);
-		if (ndlBooks.length > 0) {
-			return sortBooksByNewest(ndlBooks, true).slice(0, maxResults);
-		}
+	const ciniiBooks = ciniiResults.status === 'fulfilled' ? ciniiResults.value : [];
+	const ndlBooks = ndlResults.status === 'fulfilled' ? ndlResults.value : [];
+	const olBooks = olResults.status === 'fulfilled' ? olResults.value : [];
 
-		// 2. NDL が 429・タイムアウト・0件の場合、CiNii Books (NII) + openBD フォールバック
-		const ciniiBooks = await fetchCiniiBooks(query, maxResults);
-		if (ciniiBooks.length > 0) {
-			return sortBooksByNewest(ciniiBooks, true).slice(0, maxResults);
-		}
+	// 重複排除しながら統合
+	const combined: BookRef[] = [];
+	const seenKeys = new Set<string>();
 
-		// 3. Open Library フォールバック
-		const olBooks = await fetchOpenLibrary(query, maxResults);
-		return sortBooksByNewest(olBooks, true).slice(0, maxResults);
+	for (const book of [...ciniiBooks, ...ndlBooks, ...olBooks]) {
+		const normTitle = (book.title || '')
+			.split(/[:=＝]/)[0]
+			.replace(/[\s\u3000]/g, '')
+			.toLowerCase();
+		const dedupeKey = book.isbn13 || `${normTitle}_${book.authors?.[0] || ''}`;
+		if (seenKeys.has(dedupeKey)) continue;
+		seenKeys.add(dedupeKey);
+		combined.push(book);
 	}
 
-	// 洋書・英数字クエリの場合
-	// 1. Open Library（洋書特化・無制限）
-	const olBooks = await fetchOpenLibrary(query, maxResults);
-	if (olBooks.length > 0) {
-		return sortBooksByNewest(olBooks, false).slice(0, maxResults);
-	}
+	if (combined.length === 0) return [];
 
-	// 2. CiNii Books フォールバック
-	const ciniiBooks = await fetchCiniiBooks(query, maxResults);
-	if (ciniiBooks.length > 0) {
-		return sortBooksByNewest(ciniiBooks, false).slice(0, maxResults);
-	}
-
-	// 3. NDL フォールバック
-	const ndlBooks = await fetchNdlSearch(query, maxResults);
-	return sortBooksByNewest(ndlBooks, false).slice(0, maxResults);
+	return sortBooksByNewest(combined).slice(0, maxResults);
 }
 
 /**
@@ -173,15 +173,16 @@ function cleanAuthorName(raw: string): string[] {
  * - 全項目(q)、出版社(publisher)、タイトル(title) を複合検索
  * - デフォルトで【出版が新しい順（Newest First）】にソート
  */
-async function fetchCiniiBooks(query: string, maxResults = 20): Promise<BookRef[]> {
+async function fetchCiniiBooks(query: string, page = 1, maxResults = 20): Promise<BookRef[]> {
 	try {
 		const isJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u.test(query);
 
 		// 複数フィールドを並行取得（全項目 + 出版社 + タイトル、すべて出版年降順: sortorder=1）
+		// ページネーション: CiNii は p= パラメータでオフセット指定
+		const p = page;
 		const urls = [
-			`https://ci.nii.ac.jp/books/opensearch/search?publisher=${encodeURIComponent(query)}&sortorder=1&format=rss&count=${maxResults}`,
-			`https://ci.nii.ac.jp/books/opensearch/search?title=${encodeURIComponent(query)}&sortorder=1&format=rss&count=${maxResults}`,
-			`https://ci.nii.ac.jp/books/opensearch/search?q=${encodeURIComponent(query)}&sortorder=1&format=rss&count=${maxResults}`
+			`https://ci.nii.ac.jp/books/opensearch/search?title=${encodeURIComponent(query)}&sortorder=1&format=rss&count=${maxResults}&p=${p}`,
+			`https://ci.nii.ac.jp/books/opensearch/search?q=${encodeURIComponent(query)}&sortorder=1&format=rss&count=${maxResults}&p=${p}`
 		];
 
 		const responses = await Promise.allSettled(
@@ -276,34 +277,7 @@ async function fetchCiniiBooks(query: string, maxResults = 20): Promise<BookRef[
 			return enriched;
 		});
 
-		// デフォルトで【出版が新しい順（Newest First）】＆【和書優先】でソート
-		enrichedBooks.sort((a, b) => {
-			if (isJapanese) {
-				const aHasJa = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(
-					(a.title || '') + (a.publisher || '')
-				);
-				const bHasJa = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(
-					(b.title || '') + (b.publisher || '')
-				);
-				if (aHasJa && !bHasJa) return -1;
-				if (!aHasJa && bHasJa) return 1;
-			}
-
-			// 出版年（西暦）の新しい順（降順: 2026 -> 2025 -> 2024 ...）
-			const yearA = parseInt((a.publishedDate || '').replace(/[^0-9]/g, '').slice(0, 4) || '0', 10);
-			const yearB = parseInt((b.publishedDate || '').replace(/[^0-9]/g, '').slice(0, 4) || '0', 10);
-			if (yearA !== yearB) {
-				return yearB - yearA;
-			}
-
-			// 出版年が同じなら、書影があるものを優先
-			if (a.coverUrl && !b.coverUrl) return -1;
-			if (!a.coverUrl && b.coverUrl) return 1;
-
-			return 0;
-		});
-
-		return enrichedBooks.slice(0, maxResults);
+		return enrichedBooks;
 	} catch (e) {
 		console.warn('CiNii Books search failed:', e);
 		return [];
@@ -314,9 +288,10 @@ async function fetchCiniiBooks(query: string, maxResults = 20): Promise<BookRef[
  * 国立国会図書館サーチ (NDL OpenSearch API) + openBD 公式書影補完
  * - 同時接続数制限 (429) を回避するため単一の any クエリで安全に取得
  */
-async function fetchNdlSearch(query: string, maxResults = 20): Promise<BookRef[]> {
+async function fetchNdlSearch(query: string, page = 1, maxResults = 20): Promise<BookRef[]> {
 	try {
-		const url = `https://ndlsearch.ndl.go.jp/api/opensearch?any=${encodeURIComponent(query)}&cnt=${maxResults}`;
+		const idx = (page - 1) * maxResults + 1;
+		const url = `https://ndlsearch.ndl.go.jp/api/opensearch?any=${encodeURIComponent(query)}&cnt=${maxResults}&idx=${idx}`;
 		const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
 		if (!res.ok) return [];
 
@@ -422,9 +397,10 @@ async function fetchNdlSearch(query: string, maxResults = 20): Promise<BookRef[]
 /**
  * Open Library API キーワード検索 (CORS 完全対応・無料・キー不要・無制限) + openBD 書影補完
  */
-async function fetchOpenLibrary(query: string, maxResults = 20): Promise<BookRef[]> {
+async function fetchOpenLibrary(query: string, page = 1, maxResults = 20): Promise<BookRef[]> {
 	try {
-		const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${maxResults}`;
+		const offset = (page - 1) * maxResults;
+		const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${maxResults}&offset=${offset}`;
 		const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
 		if (!res.ok) return [];
 
@@ -439,11 +415,10 @@ async function fetchOpenLibrary(query: string, maxResults = 20): Promise<BookRef
 			const isbn10 = doc.isbn?.find((id: string) => id.length === 10);
 			const primaryIsbn = isbn13 || isbn10 || doc.isbn?.[0];
 
+			// cover_i（数値ID）が存在する場合のみ書影URLを設定（存在が確実な画像のみ使用）
 			let coverUrl: string | undefined;
 			if (doc.cover_i) {
 				coverUrl = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
-			} else if (primaryIsbn) {
-				coverUrl = `https://covers.openlibrary.org/b/isbn/${primaryIsbn}-M.jpg`;
 			}
 
 			if (isbn13) isbnsToLookup.push(isbn13);

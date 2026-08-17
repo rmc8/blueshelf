@@ -77,14 +77,17 @@ describe('BookSearch Service (TDD)', () => {
 	});
 
 	it('fetches English books by keyword via Open Library', async () => {
-		const results = await searchBooks('SvelteKit', 5);
+		const results = await searchBooks('SvelteKit', 1, 5);
 		assert.ok(Array.isArray(results));
 		assert.ok(results.length > 0);
-		const book = results[0];
-		assert.equal(book.title, 'SvelteKit Guide');
-		assert.deepEqual(book.authors, ['Rich Harris']);
+		// 新戦略: CiNii・NDL・Open Library を並行取得し和書優先ソート。
+		// NDLからの和書（実践Svelte入門）が先頭になる可能性があるため、
+		// 結果にSvelteKit Guideが含まれることを確認する。
+		const sveltekitBook = results.find((b) => b.title === 'SvelteKit Guide');
+		assert.ok(sveltekitBook, 'SvelteKit Guide should be in results');
+		assert.deepEqual(sveltekitBook!.authors, ['Rich Harris']);
 		// openBD の書影補完が効くため、openBD のカバーが優先される
-		assert.equal(book.coverUrl, 'https://cover.openbd.jp/9784297126353.jpg');
+		assert.equal(sveltekitBook!.coverUrl, 'https://cover.openbd.jp/9784297126353.jpg');
 	});
 
 	it('fetches books by ISBN-13 via openBD + Open Library (parallel)', async () => {
@@ -137,7 +140,7 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('実践Svelte', 5);
+		const results = await searchBooks('実践Svelte', 1, 5);
 		assert.ok(results.length > 0);
 		assert.equal(results[0].title, '実践Svelte入門');
 		assert.equal(results[0].isbn13, '9784297134952');
@@ -171,7 +174,7 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('人間失格', 5);
+		const results = await searchBooks('人間失格', 1, 5);
 		assert.ok(results.length > 0);
 		assert.equal(results[0].title, '人間失格');
 		// openBD に書影がない場合は undefined（仮書影コンポーネントが0msで即時描画される）
@@ -210,7 +213,7 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('Rare Book Title', 5);
+		const results = await searchBooks('Rare Book Title', 1, 5);
 		assert.ok(results.length > 0);
 		assert.equal(results[0].title, 'Rare Book Title');
 	});
@@ -260,7 +263,7 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('オライリー', 5);
+		const results = await searchBooks('オライリー', 1, 5);
 		assert.ok(results.length > 0);
 		assert.equal(results[0].isbn13, '9784873115658');
 		assert.equal(results[0].publisher, 'オライリー・ジャパン');
@@ -296,7 +299,7 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		await searchBooks('Test Book', 5);
+		await searchBooks('Test Book', 1, 5);
 		assert.equal(googleBooksCalled, false, 'Google Books API should never be called');
 	});
 });
