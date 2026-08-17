@@ -5,6 +5,11 @@ const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30日
 
 /**
  * ISBN または キーワードから書籍を検索
+ *
+ * すべて無制限・APIキー不要の公開APIのみで構成:
+ * - NDL (国立国会図書館サーチ OpenSearch): 和書100%網羅
+ * - openBD: 和書の公式書影・解説
+ * - Open Library: 洋書・グローバル書誌
  */
 export async function searchBooks(query: string, maxResults = 20): Promise<BookRef[]> {
 	const trimmed = query.trim();
@@ -31,62 +36,69 @@ export async function searchBooks(query: string, maxResults = 20): Promise<BookR
 }
 
 /**
- * ISBNによるハイブリッド取得（openBD + Google Books + Open Library）
+ * ISBNによるハイブリッド取得（openBD + Open Library 並列）
  */
 async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
-	const [openbdResult, gbooksResult, olResult] = await Promise.allSettled([
+	const [openbdResult, olResult] = await Promise.allSettled([
 		fetchOpenBd(isbn),
-		fetchGoogleBooks(`isbn:${isbn}`, 1),
-		fetchOpenLibrary(`isbn/${isbn}`)
+		fetchOpenLibraryByIsbn(isbn)
 	]);
 
 	const openbd = openbdResult.status === 'fulfilled' ? openbdResult.value : null;
-	const gbook = gbooksResult.status === 'fulfilled' ? gbooksResult.value[0] : null;
-	const ol = olResult.status === 'fulfilled' ? olResult.value[0] : null;
+	const ol = olResult.status === 'fulfilled' ? olResult.value : null;
 
-	if (!openbd && !gbook && !ol) return [];
+	if (!openbd && !ol) return [];
 
 	const merged: BookRef = {
-		isbn13: isbn.length === 13 ? isbn : openbd?.isbn13 || gbook?.isbn13 || ol?.isbn13,
-		isbn10: isbn.length === 10 ? isbn : gbook?.isbn10 || ol?.isbn10,
-		title: openbd?.title || gbook?.title || ol?.title || 'Unknown Title',
-		authors: openbd?.authors?.length
-			? openbd.authors
-			: gbook?.authors || ol?.authors || ['Unknown Author'],
-		publisher: openbd?.publisher || gbook?.publisher || ol?.publisher,
-		publishedDate: openbd?.publishedDate || gbook?.publishedDate || ol?.publishedDate,
-		coverUrl: openbd?.coverUrl || gbook?.coverUrl || ol?.coverUrl,
-		pageCount: openbd?.pageCount || gbook?.pageCount || ol?.pageCount,
-		description: openbd?.description || gbook?.description || ol?.description
+		isbn13: isbn.length === 13 ? isbn : openbd?.isbn13 || ol?.isbn13,
+		isbn10: isbn.length === 10 ? isbn : ol?.isbn10,
+		title: openbd?.title || ol?.title || 'Unknown Title',
+		authors: openbd?.authors?.length ? openbd.authors : ol?.authors || ['Unknown Author'],
+		publisher: openbd?.publisher || ol?.publisher,
+		publishedDate: openbd?.publishedDate || ol?.publishedDate,
+		coverUrl: openbd?.coverUrl || ol?.coverUrl,
+		pageCount: openbd?.pageCount || ol?.pageCount,
+		description: openbd?.description || ol?.description
 	};
+
+	// 書影がどちらからも取れなかった場合、Open Library ISBN ベースカバーで補完
+	if (!merged.coverUrl) {
+		merged.coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+	}
 
 	await saveToCache(merged.isbn13 || isbn, merged);
 	return [merged];
 }
 
 /**
- * キーワードによるハイブリッド検索（Google Books -> NDL 国立国会図書館サーチ -> Open Library -> openBD 書影補完）
+ * キーワードによるハイブリッド検索
+ * - 日本語クエリ: NDL (国立国会図書館サーチ + openBD 書影補完) を第1優先
+ * - 洋書/英数字クエリ: Open Library を第1優先
+ * - どちらも見つからない場合は相互フォールバック
  */
 async function fetchByKeyword(query: string, maxResults: number): Promise<BookRef[]> {
-	// 1. Google Books API を試行
-	const gbooks = await fetchGoogleBooks(query, maxResults);
-	if (gbooks.length > 0) {
-		return gbooks;
+	const containsJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u.test(query);
+
+	if (containsJapanese) {
+		// 1. 和書は NDL 国立国会図書館サーチ + openBD を最優先実行
+		const ndlBooks = await fetchNdlSearch(query, maxResults);
+		if (ndlBooks.length > 0) {
+			return ndlBooks;
+		}
+
+		// 2. NDL で見つからない場合、Open Library フォールバック
+		return fetchOpenLibrary(query, maxResults);
 	}
 
-	// 2. Google Books 制限(429) / ヒットなし時、NDL (国立国会図書館サーチ OpenSearch) + openBD 書影補完を実行
-	const ndlBooks = await fetchNdlSearch(query, maxResults);
-	if (ndlBooks.length > 0) {
-		return ndlBooks;
-	}
-
-	// 3. Open Library API (洋書・グローバル書誌) をフォールバック実行
+	// 洋書・英数字クエリの場合
+	// 1. Open Library（洋書に強い・CORS完全対応・無制限）
 	const olBooks = await fetchOpenLibrary(query, maxResults);
 	if (olBooks.length > 0) {
 		return olBooks;
 	}
 
-	return [];
+	// 2. NDL (国立国会図書館サーチ) フォールバック
+	return fetchNdlSearch(query, maxResults);
 }
 
 /**
@@ -150,16 +162,25 @@ async function fetchNdlSearch(query: string, maxResults = 20): Promise<BookRef[]
 		const openbdMap = await fetchOpenBdBatches(isbnsToLookup);
 
 		return rawBooks.map((book) => {
+			let enriched = book;
 			if (book.isbn13 && openbdMap.has(book.isbn13)) {
 				const bd = openbdMap.get(book.isbn13)!;
-				return {
+				enriched = {
 					...book,
 					coverUrl: bd.coverUrl || book.coverUrl,
 					description: bd.description || book.description,
 					publisher: bd.publisher || book.publisher
 				};
 			}
-			return book;
+			// openBD で書影が取れなかった場合、Open Library の ISBN ベースカバー URL で補完
+			if (!enriched.coverUrl && (enriched.isbn13 || enriched.isbn10)) {
+				const coverIsbn = enriched.isbn13 || enriched.isbn10;
+				enriched = {
+					...enriched,
+					coverUrl: `https://covers.openlibrary.org/b/isbn/${coverIsbn}-M.jpg`
+				};
+			}
+			return enriched;
 		});
 	} catch (e) {
 		console.warn('NDL search failed:', e);
@@ -168,58 +189,7 @@ async function fetchNdlSearch(query: string, maxResults = 20): Promise<BookRef[]
 }
 
 /**
- * Google Books API 検索
- */
-async function fetchGoogleBooks(q: string, maxResults: number): Promise<BookRef[]> {
-	try {
-		const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=${maxResults}`;
-		const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-		if (!res.ok) return [];
-
-		const data = await res.json();
-		if (!data.items?.length) return [];
-
-		const books: BookRef[] = [];
-
-		for (const item of data.items) {
-			const info = item.volumeInfo || {};
-			const industryIdentifiers = (info.industryIdentifiers || []) as Array<{
-				type?: string;
-				identifier?: string;
-			}>;
-			const isbn13Obj = industryIdentifiers.find((id) => id.type === 'ISBN_13');
-			const isbn10Obj = industryIdentifiers.find((id) => id.type === 'ISBN_10');
-
-			const coverUrl =
-				info.imageLinks?.thumbnail?.replace('http://', 'https://') ||
-				info.imageLinks?.smallThumbnail?.replace('http://', 'https://');
-
-			const book: BookRef = {
-				isbn13: isbn13Obj?.identifier,
-				isbn10: isbn10Obj?.identifier,
-				title: info.title || 'Untitled',
-				authors: info.authors || ['Unknown Author'],
-				publisher: info.publisher,
-				publishedDate: info.publishedDate,
-				coverUrl,
-				pageCount: info.pageCount,
-				description: info.description
-			};
-
-			books.push(book);
-			if (book.isbn13) {
-				saveToCache(book.isbn13, book).catch(() => {});
-			}
-		}
-
-		return books;
-	} catch {
-		return [];
-	}
-}
-
-/**
- * Open Library API 検索 (CORS 完全対応・無料・キー不要) + openBD 書影補完
+ * Open Library API キーワード検索 (CORS 完全対応・無料・キー不要・無制限) + openBD 書影補完
  */
 async function fetchOpenLibrary(query: string, maxResults = 20): Promise<BookRef[]> {
 	try {
@@ -276,6 +246,44 @@ async function fetchOpenLibrary(query: string, maxResults = 20): Promise<BookRef
 	} catch (e) {
 		console.warn('Open Library search failed:', e);
 		return [];
+	}
+}
+
+/**
+ * Open Library ISBN 単体検索
+ */
+async function fetchOpenLibraryByIsbn(isbn: string): Promise<BookRef | null> {
+	try {
+		const url = `https://openlibrary.org/search.json?q=isbn:${isbn}&limit=1`;
+		const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+		if (!res.ok) return null;
+
+		const data = await res.json();
+		const doc = data.docs?.[0];
+		if (!doc) return null;
+
+		const isbn13 = doc.isbn?.find((id: string) => id.length === 13);
+		const isbn10 = doc.isbn?.find((id: string) => id.length === 10);
+
+		let coverUrl: string | undefined;
+		if (doc.cover_i) {
+			coverUrl = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+		} else {
+			coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+		}
+
+		return {
+			isbn13,
+			isbn10,
+			title: doc.title || 'Untitled',
+			authors: doc.author_name || ['Unknown Author'],
+			publisher: doc.publisher?.[0],
+			publishedDate: doc.first_publish_year ? String(doc.first_publish_year) : undefined,
+			coverUrl,
+			pageCount: doc.number_of_pages_median
+		};
+	} catch {
+		return null;
 	}
 }
 

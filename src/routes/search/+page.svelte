@@ -28,21 +28,24 @@
 		'東野圭吾',
 		'伊坂幸太郎',
 		'宮部みゆき',
+		'小川洋子',
+		'川上未映子',
+		'朝井リョウ',
 		'三島由紀夫',
-		'プロジェクト・ヘイル・メアリー',
-		'TypeScript',
-		'Svelte'
+		'太宰治',
+		'プロジェクト・ヘイル・メアリー'
 	];
 
 	const enSuggestions = [
-		'Andy Weir',
 		'Haruki Murakami',
+		'Andy Weir',
+		'Kazuo Ishiguro',
 		'Ted Chiang',
+		'Sally Rooney',
 		'George Orwell',
 		'Stephen King',
-		'Brandon Sanderson',
-		'TypeScript',
-		'AT Protocol'
+		'Neil Gaiman',
+		'Brandon Sanderson'
 	];
 
 	const popularSuggestions = $derived.by(() => {

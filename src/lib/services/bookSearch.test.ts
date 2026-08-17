@@ -9,23 +9,6 @@ describe('BookSearch Service (TDD)', () => {
 		// Mock fetch responses for fast, deterministic unit tests
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
-			if (url.includes('googleapis.com')) {
-				return {
-					ok: true,
-					json: async () => ({
-						items: [
-							{
-								volumeInfo: {
-									title: 'SvelteKit Guide',
-									authors: ['Rich Harris'],
-									industryIdentifiers: [{ type: 'ISBN_13', identifier: '9784297126353' }],
-									imageLinks: { thumbnail: 'https://example.com/cover.jpg' }
-								}
-							}
-						]
-					})
-				} as Response;
-			}
 			if (url.includes('openbd.jp')) {
 				return {
 					ok: true,
@@ -35,7 +18,8 @@ describe('BookSearch Service (TDD)', () => {
 								isbn: '9784297126353',
 								title: 'SvelteKit Guide',
 								author: 'Rich Harris',
-								publisher: 'Gihyo'
+								publisher: 'Gihyo',
+								cover: 'https://cover.openbd.jp/9784297126353.jpg'
 							}
 						}
 					]
@@ -49,7 +33,8 @@ describe('BookSearch Service (TDD)', () => {
 							{
 								title: 'SvelteKit Guide',
 								author_name: ['Rich Harris'],
-								isbn: ['9784297126353']
+								isbn: ['9784297126353'],
+								cover_i: 12345678
 							}
 						]
 					})
@@ -91,35 +76,31 @@ describe('BookSearch Service (TDD)', () => {
 		assert.deepEqual(res2, []);
 	});
 
-	it('fetches books by keyword (e.g. Svelte)', async () => {
+	it('fetches English books by keyword via Open Library', async () => {
 		const results = await searchBooks('SvelteKit', 5);
 		assert.ok(Array.isArray(results));
 		assert.ok(results.length > 0);
 		const book = results[0];
 		assert.equal(book.title, 'SvelteKit Guide');
 		assert.deepEqual(book.authors, ['Rich Harris']);
+		// openBD の書影補完が効くため、openBD のカバーが優先される
+		assert.equal(book.coverUrl, 'https://cover.openbd.jp/9784297126353.jpg');
 	});
 
-	it('fetches books by ISBN-13 (e.g. 9784297126353)', async () => {
+	it('fetches books by ISBN-13 via openBD + Open Library (parallel)', async () => {
 		const results = await searchBooks('978-4-297-12635-3');
 		assert.ok(Array.isArray(results));
 		assert.ok(results.length > 0);
 		const book = results[0];
 		assert.equal(book.isbn13, '9784297126353');
+		// openBD has priority for title and cover
 		assert.equal(book.title, 'SvelteKit Guide');
+		assert.equal(book.coverUrl, 'https://cover.openbd.jp/9784297126353.jpg');
 	});
 
-	it('falls back to NDL and openBD when Google Books API fails or returns 429', async () => {
-		// Mock Google Books failure
+	it('searches Japanese books via NDL + openBD (primary path)', async () => {
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
-			if (url.includes('googleapis.com')) {
-				return {
-					ok: false,
-					status: 429,
-					json: async () => ({ error: { code: 429, message: 'Quota exceeded' } })
-				} as Response;
-			}
 			if (url.includes('ndlsearch.ndl.go.jp')) {
 				return {
 					ok: true,
@@ -156,10 +137,114 @@ describe('BookSearch Service (TDD)', () => {
 			return { ok: false, status: 404 } as Response;
 		};
 
-		const results = await searchBooks('Svelte', 5);
+		const results = await searchBooks('実践Svelte', 5);
 		assert.ok(results.length > 0);
 		assert.equal(results[0].title, '実践Svelte入門');
 		assert.equal(results[0].isbn13, '9784297134952');
 		assert.equal(results[0].coverUrl, 'https://cover.openbd.jp/9784297134952.jpg');
+	});
+
+	it('falls back to Open Library cover when openBD has no cover for NDL result', async () => {
+		globalThis.fetch = async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.includes('ndlsearch.ndl.go.jp')) {
+				return {
+					ok: true,
+					text: async () => `
+						<rss>
+							<channel>
+								<item>
+									<title>人間失格</title>
+									<author>太宰治</author>
+									<dc:publisher>新潮社</dc:publisher>
+									<dc:identifier xsi:type="dcndl:ISBN">978-4-10-100601-0</dc:identifier>
+								</item>
+							</channel>
+						</rss>
+					`
+				} as Response;
+			}
+			if (url.includes('openbd.jp')) {
+				// openBD has no cover for this book
+				return { ok: true, json: async () => [null] } as Response;
+			}
+			return { ok: false, status: 404 } as Response;
+		};
+
+		const results = await searchBooks('人間失格', 5);
+		assert.ok(results.length > 0);
+		assert.equal(results[0].title, '人間失格');
+		// openBD に書影がないので、Open Library ISBN ベースの cover URL にフォールバック
+		assert.equal(results[0].coverUrl, 'https://covers.openlibrary.org/b/isbn/9784101006010-M.jpg');
+	});
+
+	it('falls back from Open Library to NDL for English query when OL has no results', async () => {
+		// Mock: Open Library returns empty, NDL has a result
+		globalThis.fetch = async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.includes('openlibrary.org')) {
+				return {
+					ok: true,
+					json: async () => ({ docs: [] })
+				} as Response;
+			}
+			if (url.includes('ndlsearch.ndl.go.jp')) {
+				return {
+					ok: true,
+					text: async () => `
+						<rss>
+							<channel>
+								<item>
+									<title>Rare Book Title</title>
+									<author>Some Author</author>
+									<dc:publisher>Publisher Co</dc:publisher>
+								</item>
+							</channel>
+						</rss>
+					`
+				} as Response;
+			}
+			if (url.includes('openbd.jp')) {
+				return { ok: true, json: async () => [null] } as Response;
+			}
+			return { ok: false, status: 404 } as Response;
+		};
+
+		const results = await searchBooks('Rare Book Title', 5);
+		assert.ok(results.length > 0);
+		assert.equal(results[0].title, 'Rare Book Title');
+	});
+
+	it('does not call Google Books API (no googleapis.com requests)', async () => {
+		let calledGoogleBooks = false;
+		globalThis.fetch = async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.includes('googleapis.com')) {
+				calledGoogleBooks = true;
+				return { ok: false, status: 429 } as Response;
+			}
+			if (url.includes('openlibrary.org')) {
+				return {
+					ok: true,
+					json: async () => ({
+						docs: [
+							{
+								title: 'Test Book',
+								author_name: ['Author'],
+								isbn: ['9780123456789'],
+								cover_i: 99999
+							}
+						]
+					})
+				} as Response;
+			}
+			if (url.includes('openbd.jp')) {
+				return { ok: true, json: async () => [null] } as Response;
+			}
+			return { ok: false, status: 404 } as Response;
+		};
+
+		await searchBooks('Test Book', 5);
+		assert.equal(calledGoogleBooks, false, 'Google Books API should never be called');
 	});
 });
