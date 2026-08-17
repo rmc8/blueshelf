@@ -92,19 +92,28 @@
 		}
 	}
 
-	function onQueryChange(e: Event) {
-		const target = e.target as HTMLInputElement;
-		searchQuery = target.value;
-
+	$effect(() => {
+		const q = searchQuery.trim();
 		if (debounceTimer) clearTimeout(debounceTimer);
+
+		if (!q) {
+			searchResults = [];
+			hasSearched = false;
+			isLoading = false;
+			return;
+		}
+
 		debounceTimer = setTimeout(() => {
-			performSearch(searchQuery);
+			performSearch(q);
 		}, 300);
-	}
+
+		return () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+		};
+	});
 
 	function handleSuggestionClick(term: string) {
 		searchQuery = term;
-		performSearch(term);
 	}
 
 	function clearSearch() {
@@ -154,7 +163,6 @@
 				type="text"
 				placeholder={m.search_placeholder()}
 				bind:value={searchQuery}
-				oninput={onQueryChange}
 				class="h-11 rounded-xl border-border/80 bg-card pr-10 pl-10 text-sm text-foreground shadow-xs focus-visible:ring-primary"
 				autofocus
 			/>

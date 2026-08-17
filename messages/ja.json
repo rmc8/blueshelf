@@ -36,7 +36,7 @@
 	"crosspost_bluesky": "Blueskyのタイムラインにも投稿する",
 	"save_to_pds": "PDSに保存",
 	"search_placeholder": "タイトル・著者名・ISBNで検索",
-	"search_subtitle": "Google Books と openBD を横断し、和書・洋書の書誌・書影を高精度に検索します。",
+	"search_subtitle": "国立国会図書館(NDL)と openBD・Open Library を横断し、和書・洋書の書誌・書影を高精度に検索します。",
 	"search_recommended": "おすすめ:",
 	"search_results_count": "検索結果: {count} 件",
 	"search_not_found_title": "該当する本が見つかりませんでした",

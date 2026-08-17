@@ -36,7 +36,7 @@
 	"crosspost_bluesky": "Also post to Bluesky timeline",
 	"save_to_pds": "Save to PDS",
 	"search_placeholder": "Search by title, author, or ISBN",
-	"search_subtitle": "Search Japanese and international book metadata across Google Books and openBD.",
+	"search_subtitle": "Search Japanese and international book metadata across NDL, openBD, and Open Library.",
 	"search_recommended": "Popular:",
 	"search_results_count": "Results: {count}",
 	"search_not_found_title": "No matching books found",
