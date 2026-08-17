@@ -224,3 +224,4 @@ $RECYCLE.BIN/
 .playwright-mcp
 test-results/
 playwright-report/
+project.inlang/cache/

@@ -1,6 +1,8 @@
 .svelte-kit
 build
 node_modules
+src/lib/paraglide
+project.inlang/cache
 test-results
 playwright-report
 .playwright-mcp
