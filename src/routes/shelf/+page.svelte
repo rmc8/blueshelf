@@ -209,7 +209,7 @@
 				/>
 			{:else}
 				<div class="space-y-2.5">
-					{#each filteredItems as item (item.book.isbn13 || item.book.title)}
+					{#each filteredItems as item, i (item.book.isbn13 ? `${item.book.isbn13}_${i}` : `${item.book.title}_${i}`)}
 						<ShelfListItem {item} onSelect={() => handleSelectBook(item.book)} />
 					{/each}
 				</div>
