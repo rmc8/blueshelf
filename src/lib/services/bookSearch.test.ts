@@ -144,7 +144,7 @@ describe('BookSearch Service (TDD)', () => {
 		assert.equal(results[0].coverUrl, 'https://cover.openbd.jp/9784297134952.jpg');
 	});
 
-	it('falls back to Open Library cover when openBD has no cover for NDL result', async () => {
+	it('leaves coverUrl undefined when openBD has no cover (triggers instant placeholder cover)', async () => {
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
 			if (url.includes('ndlsearch.ndl.go.jp')) {
@@ -174,11 +174,8 @@ describe('BookSearch Service (TDD)', () => {
 		const results = await searchBooks('人間失格', 5);
 		assert.ok(results.length > 0);
 		assert.equal(results[0].title, '人間失格');
-		// openBD に書影がないので、Open Library ISBN ベースの cover URL にフォールバック（?default=false 付与）
-		assert.equal(
-			results[0].coverUrl,
-			'https://covers.openlibrary.org/b/isbn/9784101006010-M.jpg?default=false'
-		);
+		// openBD に書影がない場合は undefined（仮書影コンポーネントが0msで即時描画される）
+		assert.equal(results[0].coverUrl, undefined);
 	});
 
 	it('falls back from Open Library to NDL for English query when OL has no results', async () => {

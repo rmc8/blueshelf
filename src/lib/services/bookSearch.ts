@@ -68,11 +68,6 @@ async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
 		description: openbd?.description || ol?.description
 	};
 
-	// 書影補完
-	if (!merged.coverUrl) {
-		merged.coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
-	}
-
 	await saveToCache(merged.isbn13 || isbn, merged);
 	return [merged];
 }
@@ -264,7 +259,7 @@ async function fetchCiniiBooks(query: string, maxResults = 20): Promise<BookRef[
 
 		if (rawBooks.length === 0) return [];
 
-		// openBD から公式書影・解説を一括取得
+		// openBD から公式書影・解説を一括取得（openBDに書影があるもののみ確実にcoverUrlを設定）
 		const openbdMap = await fetchOpenBdBatches(isbnsToLookup);
 
 		const enrichedBooks = rawBooks.map((book) => {
@@ -276,14 +271,6 @@ async function fetchCiniiBooks(query: string, maxResults = 20): Promise<BookRef[
 					coverUrl: bd.coverUrl || book.coverUrl,
 					description: bd.description || book.description,
 					publisher: bd.publisher || book.publisher
-				};
-			}
-			// Open Library カバーURLには ?default=false を指定（存在しない場合に404を返して仮書影へフォールバックさせる）
-			if (!enriched.coverUrl && (enriched.isbn13 || enriched.isbn10)) {
-				const coverIsbn = enriched.isbn13 || enriched.isbn10;
-				enriched = {
-					...enriched,
-					coverUrl: `https://covers.openlibrary.org/b/isbn/${coverIsbn}-M.jpg?default=false`
 				};
 			}
 			return enriched;
@@ -408,7 +395,7 @@ async function fetchNdlSearch(query: string, maxResults = 20): Promise<BookRef[]
 
 		if (rawBooks.length === 0) return [];
 
-		// openBD から公式書影・解説を一括取得
+		// openBD から公式書影・解説を一括取得（openBDに書影があるもののみ確実にcoverUrlを設定）
 		const openbdMap = await fetchOpenBdBatches(isbnsToLookup);
 
 		return rawBooks
@@ -421,14 +408,6 @@ async function fetchNdlSearch(query: string, maxResults = 20): Promise<BookRef[]
 						coverUrl: bd.coverUrl || book.coverUrl,
 						description: bd.description || book.description,
 						publisher: bd.publisher || book.publisher
-					};
-				}
-				// openBD で書影が取れなかった場合、Open Library の ISBN ベースカバー URL で補完（存在しない場合は404にして仮書影へ）
-				if (!enriched.coverUrl && (enriched.isbn13 || enriched.isbn10)) {
-					const coverIsbn = enriched.isbn13 || enriched.isbn10;
-					enriched = {
-						...enriched,
-						coverUrl: `https://covers.openlibrary.org/b/isbn/${coverIsbn}-M.jpg?default=false`
 					};
 				}
 				return enriched;
