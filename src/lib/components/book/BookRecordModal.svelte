@@ -5,17 +5,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import StarRating from '$lib/components/book/StarRating.svelte';
 	import BookCoverPlaceholder from '$lib/components/book/BookCoverPlaceholder.svelte';
-	import {
-		X,
-		Book,
-		Bookmark,
-		BookOpen,
-		CheckCircle,
-		Clock,
-		Ban,
-		Share2,
-		Save
-	} from '@lucide/svelte';
+	import { X, Bookmark, BookOpen, CheckCircle, Clock, Ban, Share2, Save } from '@lucide/svelte';
 	import * as m from '$lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
 
