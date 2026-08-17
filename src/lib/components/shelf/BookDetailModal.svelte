@@ -4,7 +4,8 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import StarRating from '$lib/components/book/StarRating.svelte';
-	import { X, Book, Plus, ExternalLink, AlertTriangle } from '@lucide/svelte';
+	import BookCoverPlaceholder from '$lib/components/book/BookCoverPlaceholder.svelte';
+	import { X, Plus, ExternalLink, AlertTriangle } from '@lucide/svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -17,10 +18,12 @@
 	let { item, isOpen, onClose, onAddToMyShelf }: Props = $props();
 
 	let revealSpoiler = $state(false);
+	let imageError = $state(false);
 
 	$effect(() => {
 		if (isOpen) {
 			revealSpoiler = false;
+			imageError = false;
 		}
 	});
 
@@ -93,12 +96,19 @@
 				<div
 					class="relative aspect-2/3 w-24 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted/60 shadow-sm"
 				>
-					{#if book.coverUrl}
-						<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
+					{#if book.coverUrl && !imageError}
+						<img
+							src={book.coverUrl}
+							alt={book.title}
+							class="h-full w-full object-cover"
+							onerror={() => (imageError = true)}
+						/>
 					{:else}
-						<div class="flex h-full w-full items-center justify-center text-muted-foreground">
-							<Book class="h-8 w-8 opacity-30" />
-						</div>
+						<BookCoverPlaceholder
+							title={book.title}
+							author={book.authors?.[0]}
+							publisher={book.publisher}
+						/>
 					{/if}
 				</div>
 

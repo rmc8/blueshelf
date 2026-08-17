@@ -2,7 +2,8 @@
 	import type { ShelfItem } from '$lib/services/bookRecord';
 	import { Badge } from '$lib/components/ui/badge';
 	import StarRating from '$lib/components/book/StarRating.svelte';
-	import { Book, ChevronRight } from '@lucide/svelte';
+	import BookCoverPlaceholder from '$lib/components/book/BookCoverPlaceholder.svelte';
+	import { ChevronRight } from '@lucide/svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -12,9 +13,17 @@
 
 	let { item, onSelect }: Props = $props();
 
+	let imageError = $state(false);
+
 	const status = $derived(item.statusRecord.status);
 	const book = $derived(item.book);
 	const review = $derived(item.reviewRecord);
+
+	$effect(() => {
+		if (book.coverUrl !== undefined) {
+			imageError = false;
+		}
+	});
 
 	function getStatusLabel(s: string) {
 		switch (s) {
@@ -46,12 +55,19 @@
 		<div
 			class="relative aspect-2/3 w-14 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted/60 shadow-xs"
 		>
-			{#if book.coverUrl}
-				<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
+			{#if book.coverUrl && !imageError}
+				<img
+					src={book.coverUrl}
+					alt={book.title}
+					class="h-full w-full object-cover"
+					onerror={() => (imageError = true)}
+				/>
 			{:else}
-				<div class="flex h-full w-full items-center justify-center text-muted-foreground">
-					<Book class="h-5 w-5 opacity-30" />
-				</div>
+				<BookCoverPlaceholder
+					title={book.title}
+					author={book.authors?.[0]}
+					publisher={book.publisher}
+				/>
 			{/if}
 		</div>
 

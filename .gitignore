@@ -222,3 +222,6 @@ $RECYCLE.BIN/
 *.lnk
 
 .playwright-mcp
+test-results/
+playwright-report/
+project.inlang/cache/

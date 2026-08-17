@@ -2,7 +2,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import * as m from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
-	import { searchBooks } from '$lib/services/bookSearch';
+	import { searchBooks, type SearchResult } from '$lib/services/bookSearch';
 	import { getAllReadingRecords } from '$lib/services/bookRecord';
 	import type { BookRef, ReadingStatusType } from '$lib/types/book';
 	import { Input } from '$lib/components/ui/input';
@@ -18,6 +18,13 @@
 	let searchResults = $state<BookRef[]>([]);
 	let isLoading = $state(false);
 	let hasSearched = $state(false);
+
+	// ページネーション
+	let currentPage = $state(1);
+	let perPage = $state(20);
+	let totalCount = $state(0); // APIからの推定総件数
+	let hasMorePages = $state(false);
+	let isLoadingMore = $state(false);
 
 	let selectedBookForModal = $state<BookRef | null>(null);
 	let isModalOpen = $state(false);
@@ -67,44 +74,78 @@
 		}
 	});
 
-	async function performSearch(query: string) {
+	async function performSearch(query: string, page = 1, append = false) {
 		const trimmed = query.trim();
 		if (!trimmed) {
 			searchResults = [];
 			hasSearched = false;
 			isLoading = false;
+			hasMorePages = false;
 			return;
 		}
 
-		isLoading = true;
-		hasSearched = true;
+		if (append) {
+			isLoadingMore = true;
+		} else {
+			isLoading = true;
+			hasSearched = true;
+		}
 
 		try {
-			const results = await searchBooks(trimmed);
-			searchResults = results;
+			const result = await searchBooks(trimmed, page, perPage);
+			const { books, total } = result;
+			if (append) {
+				searchResults = [...searchResults, ...books];
+			} else {
+				searchResults = books;
+				totalCount = total;
+			}
+			// 取得件数が要求件数と同じなら次ページがある可能性
+			hasMorePages = books.length >= perPage && searchResults.length < (totalCount || Infinity);
+			currentPage = page;
 		} catch (err) {
 			console.error('Book search error:', err);
 			toast.error(m.search_error());
-			searchResults = [];
+			if (!append) {
+				searchResults = [];
+				totalCount = 0;
+			}
 		} finally {
 			isLoading = false;
+			isLoadingMore = false;
 		}
 	}
 
 	function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
-		performSearch(searchQuery);
+		currentPage = 1;
+		performSearch(searchQuery, 1, false);
 	}
 
 	function handleSuggestionClick(term: string) {
 		searchQuery = term;
-		performSearch(term);
+		currentPage = 1;
+		performSearch(term, 1, false);
+	}
+
+	function handleLoadMore() {
+		performSearch(searchQuery, currentPage + 1, true);
+	}
+
+	function handlePerPageChange(e: Event) {
+		const newVal = parseInt((e.target as HTMLSelectElement).value, 10);
+		perPage = newVal;
+		currentPage = 1;
+		performSearch(searchQuery, 1, false);
 	}
 
 	function clearSearch() {
 		searchQuery = '';
 		searchResults = [];
 		hasSearched = false;
+		hasMorePages = false;
+		currentPage = 1;
+		totalCount = 0;
 	}
 
 	function handleSelectBook(book: BookRef) {
@@ -204,11 +245,52 @@
 		{#if isLoading}
 			<BookSkeleton count={10} />
 		{:else if searchResults.length > 0}
-			<div class="space-y-4">
-				<div class="flex items-center justify-between px-1 text-xs text-muted-foreground">
-					<span>{m.search_results_count({ count: searchResults.length })}</span>
+			<div class="space-y-6">
+				<!-- Results Header: count + per-page selector -->
+				<div class="flex items-center justify-between px-1">
+					<span class="text-xs text-muted-foreground">
+						{#if totalCount > 0}
+							{searchResults.length}件表示（推定約 {totalCount.toLocaleString()}件中）
+						{:else}
+							{m.search_results_count({ count: searchResults.length })}
+						{/if}
+					</span>
+					<label class="flex items-center gap-1.5 text-xs text-muted-foreground">
+						表示件数:
+						<select
+							value={perPage}
+							onchange={handlePerPageChange}
+							class="rounded-md border border-border/60 bg-card px-2 py-1 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+						>
+							<option value={20}>20件</option>
+							<option value={50}>50件</option>
+							<option value={100}>100件</option>
+						</select>
+					</label>
 				</div>
+
 				<BookGrid books={searchResults} {statusMap} onSelectBook={handleSelectBook} />
+
+				<!-- Load More / Pagination -->
+				{#if hasMorePages}
+					<div class="flex justify-center pt-2 pb-6">
+						<Button
+							variant="outline"
+							onclick={handleLoadMore}
+							disabled={isLoadingMore}
+							class="h-10 min-w-36 rounded-xl border-border/70 text-sm font-medium shadow-xs"
+						>
+							{#if isLoadingMore}
+								<div
+									class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+								></div>
+								読み込み中…
+							{:else}
+								さらに表示 (p.{currentPage + 1})
+							{/if}
+						</Button>
+					</div>
+				{/if}
 			</div>
 		{:else if hasSearched}
 			<!-- Empty State -->
