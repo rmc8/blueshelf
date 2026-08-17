@@ -215,12 +215,64 @@ describe('BookSearch Service (TDD)', () => {
 		assert.equal(results[0].title, 'Rare Book Title');
 	});
 
+	it('falls back to CiNii Books when NDL returns 429 Too Many Requests', async () => {
+		globalThis.fetch = async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.includes('ndlsearch.ndl.go.jp')) {
+				return {
+					ok: false,
+					status: 429,
+					text: async () => '<code>429</code><message>Too Many Requests</message>'
+				} as Response;
+			}
+			if (url.includes('ci.nii.ac.jp')) {
+				return {
+					ok: true,
+					text: async () => `
+						<rdf:RDF>
+							<channel><title>CiNii</title></channel>
+							<item>
+								<title>リーダブルコード : より良いコードを書くためのシンプルな実践テクニック</title>
+								<dc:creator>Dustin Boswell, Trevor Foucher</dc:creator>
+								<dc:publisher>オライリー・ジャパン</dc:publisher>
+								<dcterms:hasPart rdf:resource="urn:isbn:9784873115658"/>
+							</item>
+						</rdf:RDF>
+					`
+				} as Response;
+			}
+			if (url.includes('openbd.jp')) {
+				return {
+					ok: true,
+					json: async () => [
+						{
+							summary: {
+								isbn: '9784873115658',
+								title: 'リーダブルコード',
+								author: 'Dustin Boswell',
+								publisher: 'オライリー・ジャパン',
+								cover: 'https://cover.openbd.jp/9784873115658.jpg'
+							}
+						}
+					]
+				} as Response;
+			}
+			return { ok: false, status: 404 } as Response;
+		};
+
+		const results = await searchBooks('オライリー', 5);
+		assert.ok(results.length > 0);
+		assert.equal(results[0].isbn13, '9784873115658');
+		assert.equal(results[0].publisher, 'オライリー・ジャパン');
+		assert.equal(results[0].coverUrl, 'https://cover.openbd.jp/9784873115658.jpg');
+	});
+
 	it('does not call Google Books API (no googleapis.com requests)', async () => {
-		let calledGoogleBooks = false;
+		let googleBooksCalled = false;
 		globalThis.fetch = async (input: RequestInfo | URL) => {
 			const url = String(input);
 			if (url.includes('googleapis.com')) {
-				calledGoogleBooks = true;
+				googleBooksCalled = true;
 				return { ok: false, status: 429 } as Response;
 			}
 			if (url.includes('openlibrary.org')) {
@@ -245,6 +297,6 @@ describe('BookSearch Service (TDD)', () => {
 		};
 
 		await searchBooks('Test Book', 5);
-		assert.equal(calledGoogleBooks, false, 'Google Books API should never be called');
+		assert.equal(googleBooksCalled, false, 'Google Books API should never be called');
 	});
 });

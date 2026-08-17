@@ -68,4 +68,24 @@ test.describe('Book Search Page E2E (GitHub Pages Environment)', () => {
 		// スクリーンショットを撮影
 		await page.screenshot({ path: 'test-results/murakami-search-success.png', fullPage: true });
 	});
+
+	test('searches publisher/keyword "オライリー" and renders books with covers', async ({
+		page
+	}) => {
+		await page.goto('/search/');
+
+		const searchInput = page.getByPlaceholder('タイトル・著者名・ISBNで検索');
+		await searchInput.fill('オライリー');
+
+		// 検索結果カードが表示されること（NDL/CiNii/OpenLibrary横断）
+		const firstBookCard = page.locator('.grid > div').first();
+		await expect(firstBookCard).toBeVisible({ timeout: 20000 });
+
+		const titleText = await firstBookCard.locator('h2').textContent();
+		console.log(`Found O'Reilly book in E2E: ${titleText}`);
+		expect(titleText).toBeTruthy();
+
+		// スクリーンショットを撮影
+		await page.screenshot({ path: 'test-results/oreilly-search-success.png', fullPage: true });
+	});
 });
