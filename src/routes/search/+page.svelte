@@ -6,6 +6,7 @@
 	import { getAllReadingRecords } from '$lib/services/bookRecord';
 	import type { BookRef, ReadingStatusType } from '$lib/types/book';
 	import { Input } from '$lib/components/ui/input';
+	import { Button } from '$lib/components/ui/button';
 	import BookGrid from '$lib/components/book/BookGrid.svelte';
 	import BookSkeleton from '$lib/components/book/BookSkeleton.svelte';
 	import BookRecordModal from '$lib/components/book/BookRecordModal.svelte';
@@ -52,8 +53,6 @@
 		return getLocale() === 'ja' ? jaSuggestions : enSuggestions;
 	});
 
-	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
 	onMount(async () => {
 		try {
 			const shelfItems = await getAllReadingRecords();
@@ -92,28 +91,14 @@
 		}
 	}
 
-	$effect(() => {
-		const q = searchQuery.trim();
-		if (debounceTimer) clearTimeout(debounceTimer);
-
-		if (!q) {
-			searchResults = [];
-			hasSearched = false;
-			isLoading = false;
-			return;
-		}
-
-		debounceTimer = setTimeout(() => {
-			performSearch(q);
-		}, 300);
-
-		return () => {
-			if (debounceTimer) clearTimeout(debounceTimer);
-		};
-	});
+	function handleSubmit(e: SubmitEvent) {
+		e.preventDefault();
+		performSearch(searchQuery);
+	}
 
 	function handleSuggestionClick(term: string) {
 		searchQuery = term;
+		performSearch(term);
 	}
 
 	function clearSearch() {
@@ -151,33 +136,50 @@
 			{m.search_subtitle()}
 		</p>
 
-		<!-- Search Input Box -->
-		<div class="relative flex items-center shadow-xs">
-			<div
-				class="pointer-events-none absolute left-3.5 z-10 flex items-center text-muted-foreground"
-			>
-				<Search class="h-4 w-4" />
+		<!-- Search Form with Button -->
+		<form onsubmit={handleSubmit} class="flex items-center gap-2">
+			<div class="relative flex flex-1 items-center shadow-xs">
+				<div
+					class="pointer-events-none absolute left-3.5 z-10 flex items-center text-muted-foreground"
+				>
+					<Search class="h-4 w-4" />
+				</div>
+
+				<Input
+					type="text"
+					placeholder={m.search_placeholder()}
+					bind:value={searchQuery}
+					class="h-11 rounded-xl border-border/80 bg-card pr-10 pl-10 text-sm text-foreground shadow-xs focus-visible:ring-primary"
+					autofocus
+				/>
+
+				{#if searchQuery}
+					<button
+						type="button"
+						onclick={clearSearch}
+						class="absolute right-3.5 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+						aria-label="Clear search"
+					>
+						<X class="h-3.5 w-3.5" />
+					</button>
+				{/if}
 			</div>
 
-			<Input
-				type="text"
-				placeholder={m.search_placeholder()}
-				bind:value={searchQuery}
-				class="h-11 rounded-xl border-border/80 bg-card pr-10 pl-10 text-sm text-foreground shadow-xs focus-visible:ring-primary"
-				autofocus
-			/>
-
-			{#if searchQuery}
-				<button
-					type="button"
-					onclick={clearSearch}
-					class="absolute right-3.5 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
-					aria-label="Clear search"
-				>
-					<X class="h-3.5 w-3.5" />
-				</button>
-			{/if}
-		</div>
+			<Button
+				type="submit"
+				disabled={isLoading || !searchQuery.trim()}
+				class="h-11 rounded-xl px-5 font-medium shadow-xs"
+			>
+				{#if isLoading}
+					<div
+						class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+					></div>
+				{:else}
+					<Search class="mr-1.5 h-4 w-4" />
+					{m.search_button()}
+				{/if}
+			</Button>
+		</form>
 
 		<!-- Popular Search Suggestions -->
 		<div class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
