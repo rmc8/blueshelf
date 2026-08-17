@@ -65,9 +65,12 @@
 		}
 	];
 
+	let imageError = $state(false);
+
 	// モーダルが開かれたとき、既存レコードを取得してフォームを初期化
 	$effect(() => {
 		if (isOpen && book) {
+			imageError = false;
 			totalPages = book.pageCount || 0;
 			loadExistingData(book);
 		}
@@ -250,8 +253,13 @@
 				<div
 					class="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted/60 shadow-sm"
 				>
-					{#if book.coverUrl}
-						<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
+					{#if book.coverUrl && !imageError}
+						<img
+							src={book.coverUrl}
+							alt={book.title}
+							class="h-full w-full object-cover"
+							onerror={() => (imageError = true)}
+						/>
 					{:else}
 						<BookCoverPlaceholder
 							title={book.title}

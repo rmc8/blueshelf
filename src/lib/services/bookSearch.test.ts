@@ -174,8 +174,11 @@ describe('BookSearch Service (TDD)', () => {
 		const results = await searchBooks('人間失格', 5);
 		assert.ok(results.length > 0);
 		assert.equal(results[0].title, '人間失格');
-		// openBD に書影がないので、Open Library ISBN ベースの cover URL にフォールバック
-		assert.equal(results[0].coverUrl, 'https://covers.openlibrary.org/b/isbn/9784101006010-M.jpg');
+		// openBD に書影がないので、Open Library ISBN ベースの cover URL にフォールバック（?default=false 付与）
+		assert.equal(
+			results[0].coverUrl,
+			'https://covers.openlibrary.org/b/isbn/9784101006010-M.jpg?default=false'
+		);
 	});
 
 	it('falls back from Open Library to NDL for English query when OL has no results', async () => {

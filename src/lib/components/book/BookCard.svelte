@@ -16,6 +16,12 @@
 
 	let imageError = $state(false);
 
+	$effect(() => {
+		if (book.coverUrl !== undefined) {
+			imageError = false;
+		}
+	});
+
 	function getStatusLabel(s: ReadingStatus) {
 		switch (s) {
 			case 'want':

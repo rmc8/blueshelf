@@ -18,10 +18,12 @@
 	let { item, isOpen, onClose, onAddToMyShelf }: Props = $props();
 
 	let revealSpoiler = $state(false);
+	let imageError = $state(false);
 
 	$effect(() => {
 		if (isOpen) {
 			revealSpoiler = false;
+			imageError = false;
 		}
 	});
 
@@ -94,8 +96,13 @@
 				<div
 					class="relative aspect-2/3 w-24 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted/60 shadow-sm"
 				>
-					{#if book.coverUrl}
-						<img src={book.coverUrl} alt={book.title} class="h-full w-full object-cover" />
+					{#if book.coverUrl && !imageError}
+						<img
+							src={book.coverUrl}
+							alt={book.title}
+							class="h-full w-full object-cover"
+							onerror={() => (imageError = true)}
+						/>
 					{:else}
 						<BookCoverPlaceholder
 							title={book.title}
