@@ -29,6 +29,7 @@
 		"clsx": "^2.1.1",
 		"dexie": "^4.4.5",
 		"dompurify": "^3.4.13",
+		"isbn3": "^2.0.10",
 		"mode-watcher": "^1.1.0",
 		"svelte-sonner": "^1.2.1",
 		"tailwind-merge": "^3.6.0"

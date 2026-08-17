@@ -1,5 +1,6 @@
 import { db, type CachedBook } from '$lib/db';
 import type { BookRef } from '$lib/types/book';
+import isbn3 from 'isbn3';
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30日
 
@@ -7,7 +8,8 @@ const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30日
  * ISBN または キーワードから書籍を検索
  *
  * 完全無料・APIキー不要・無制限の公開データ基盤:
- * - NDL (国立国会図書館サーチ OpenSearch API / mediatype=booklet): 和書100%網羅
+ * - NDL (国立国会図書館サーチ OpenSearch API): 和書納本データベース
+ * - CiNii Books (国立情報学研究所): 全国の大学図書館・専門書・技術書
  * - openBD: 和書の高品質公式書影・解説
  * - Open Library (Internet Archive): 洋書・グローバル書誌・ISBN書影配信
  */
@@ -15,13 +17,14 @@ export async function searchBooks(query: string, maxResults = 20): Promise<BookR
 	const trimmed = query.trim();
 	if (!trimmed) return [];
 
-	const isIsbn = /^(\d{10}|\d{13})$/.test(trimmed.replace(/-/g, ''));
-	const cleanedIsbn = isIsbn ? trimmed.replace(/-/g, '') : null;
+	// isbn3 ライブラリで正確な ISBN 検証・正規化
+	const parsedIsbn = isbn3.parse(trimmed);
+	const isbn13 = parsedIsbn?.isValid ? parsedIsbn.isbn13 : null;
 
-	if (cleanedIsbn) {
+	if (isbn13) {
 		if (typeof indexedDB !== 'undefined') {
 			try {
-				const cached = await db.books.get(cleanedIsbn);
+				const cached = await db.books.get(isbn13);
 				if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
 					return [cached];
 				}
@@ -29,7 +32,7 @@ export async function searchBooks(query: string, maxResults = 20): Promise<BookR
 				// IndexedDB missing in SSR / Node test
 			}
 		}
-		return fetchByIsbn(cleanedIsbn);
+		return fetchByIsbn(isbn13);
 	}
 
 	return fetchByKeyword(trimmed, maxResults);
@@ -39,9 +42,13 @@ export async function searchBooks(query: string, maxResults = 20): Promise<BookR
  * ISBNによるハイブリッド取得（openBD + Open Library 並列）
  */
 async function fetchByIsbn(isbn: string): Promise<BookRef[]> {
+	const parsed = isbn3.parse(isbn);
+	const isbn13 = parsed?.isbn13 || (isbn.length === 13 ? isbn : undefined);
+	const isbn10 = parsed?.isbn10 || (isbn.length === 10 ? isbn : undefined);
+
 	const [openbdResult, olResult] = await Promise.allSettled([
-		fetchOpenBd(isbn),
-		fetchOpenLibraryByIsbn(isbn)
+		fetchOpenBd(isbn13 || isbn),
+		fetchOpenLibraryByIsbn(isbn13 || isbn)
 	]);
 
 	const openbd = openbdResult.status === 'fulfilled' ? openbdResult.value : null;
